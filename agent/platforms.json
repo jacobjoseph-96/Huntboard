@@ -1,0 +1,88 @@
+{
+  "_comment": "Where each AI tool reads instructions, skills and MCP servers, and how the app runs it in the background. 'verified' = checked against the tool on a real machine; unverified entries are best effort and shown as 'experimental' in the app.",
+  "allow": {
+    "_comment": "What the AI may do without asking when the app runs it in the background.",
+    "commands": ["node tools/hunt.js", "node tools\\hunt.js"],
+    "browser": true,
+    "web": true,
+    "write_dirs": ["workspace"]
+  },
+  "tools": {
+    "claude": {
+      "name": "Claude Code",
+      "bin": ["claude"],
+      "verified": true,
+      "instructions": "CLAUDE.md",
+      "skills": ".claude/skills",
+      "mcp": ".mcp.json",
+      "settings": ".claude/settings.json",
+      "install": "https://code.claude.com/docs/en/setup",
+      "sign_in": "claude"
+    },
+    "antigravity": {
+      "name": "Antigravity CLI (Gemini)",
+      "bin": ["agy"],
+      "extra_paths": ["%LOCALAPPDATA%/agy/bin/agy.exe"],
+      "verified": true,
+      "instructions": "GEMINI.md",
+      "skills": ".agents/skills",
+      "mcp": ".agents/plugins/job-browser/mcp_config.json",
+      "install": "https://antigravity.google/cli",
+      "sign_in": "agy"
+    },
+    "gemini": {
+      "name": "Gemini CLI",
+      "bin": ["gemini"],
+      "verified": false,
+      "instructions": "GEMINI.md",
+      "skills": ".gemini/skills",
+      "commands": ".gemini/commands",
+      "mcp": ".gemini/settings.json",
+      "install": "npm install -g @google/gemini-cli",
+      "sign_in": "gemini"
+    },
+    "codex": {
+      "name": "Codex CLI",
+      "bin": ["codex"],
+      "verified": false,
+      "instructions": "AGENTS.md",
+      "skills": ".agents/skills",
+      "mcp": ".codex/config.toml",
+      "install": "npm install -g @openai/codex",
+      "sign_in": "codex login"
+    },
+    "opencode": {
+      "name": "OpenCode (any model: OpenAI, Anthropic, OpenRouter, Ollama, LM Studio...)",
+      "bin": ["opencode"],
+      "verified": false,
+      "instructions": "AGENTS.md",
+      "skills": ".opencode/skills",
+      "commands": ".opencode/command",
+      "mcp": "opencode.json",
+      "install": "npm install -g opencode-ai",
+      "sign_in": "opencode auth login"
+    },
+    "copilot": {
+      "name": "GitHub Copilot CLI",
+      "bin": ["copilot"],
+      "verified": false,
+      "instructions": "AGENTS.md",
+      "skills": ".github/skills",
+      "commands": ".github/prompts",
+      "mcp": ".vscode/mcp.json",
+      "install": "npm install -g @github/copilot",
+      "sign_in": "copilot"
+    },
+    "cursor": {
+      "name": "Cursor CLI",
+      "bin": ["cursor-agent"],
+      "verified": false,
+      "instructions": "AGENTS.md",
+      "skills": ".cursor/skills",
+      "commands": ".cursor/commands",
+      "mcp": ".cursor/mcp.json",
+      "install": "https://cursor.com/cli",
+      "sign_in": "cursor-agent login"
+    }
+  }
+}

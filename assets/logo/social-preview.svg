@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Huntboard">
+  <title>Huntboard</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b3d39"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <!-- faint board columns in the background -->
+  <g opacity="0.10" fill="#ffffff">
+    <rect x="760" y="90" width="130" height="460" rx="16"/>
+    <rect x="910" y="90" width="130" height="460" rx="16"/>
+    <rect x="1060" y="90" width="130" height="460" rx="16"/>
+  </g>
+  <g opacity="0.22" fill="#ffffff">
+    <rect x="775" y="130" width="100" height="56" rx="9"/>
+    <rect x="775" y="200" width="100" height="56" rx="9"/>
+    <rect x="925" y="130" width="100" height="56" rx="9"/>
+    <rect x="1075" y="130" width="100" height="56" rx="9"/>
+  </g>
+  <g transform="translate(110 150) scale(4.2)">
+    <circle cx="27" cy="27" r="19" fill="#115e59" stroke="#ffffff" stroke-width="5"/>
+    <rect x="15.5" y="28" width="6" height="9" rx="1.6" fill="#5eead4"/>
+    <rect x="24" y="22.5" width="6" height="14.5" rx="1.6" fill="#ffffff"/>
+    <rect x="32.5" y="16" width="6" height="21" rx="1.6" fill="#fbbf24"/>
+    <path d="M41 41 L55 55" stroke="#ffffff" stroke-width="7.5" stroke-linecap="round"/>
+  </g>
+  <text x="400" y="300" font-family="Segoe UI, Inter, Helvetica Neue, Arial, sans-serif" font-size="96" font-weight="700" letter-spacing="-2" fill="#ffffff">Huntboard</text>
+  <text x="404" y="370" font-family="Segoe UI, Inter, Helvetica Neue, Arial, sans-serif" font-size="34" fill="#ccfbf1">Your CV in. The right jobs, tailored applications</text>
+  <text x="404" y="418" font-family="Segoe UI, Inter, Helvetica Neue, Arial, sans-serif" font-size="34" fill="#ccfbf1">and interview prep out, with the AI you already use.</text>
+</svg>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="hb-token" content="{{TOKEN}}">
+  <title>Huntboard</title>
+  <link rel="icon" href="/assets/logo/huntboard-badge.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/vendor/marked.js" defer></script>
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <nav class="sidebar" aria-label="Main">
+      <a class="brand" href="#/home" aria-label="Huntboard home">
+        <img src="/assets/logo/huntboard-mark.svg" alt="" width="34" height="34">
+        <span>Huntboard</span>
+      </a>
+      <ul class="nav">
+        <li><a href="#/home" data-nav="home"><span class="ico" aria-hidden="true">⌂</span>Home<span class="pill" id="nav-inbox" hidden></span></a></li>
+        <li><a href="#/search" data-nav="search"><span class="ico" aria-hidden="true">⌕</span>Find jobs</a></li>
+        <li><a href="#/board" data-nav="board"><span class="ico" aria-hidden="true">▦</span>Board</a></li>
+        <li><a href="#/chat" data-nav="chat"><span class="ico" aria-hidden="true">✎</span>Ask the AI</a></li>
+        <li class="sep"></li>
+        <li><a href="#/profile" data-nav="profile"><span class="ico" aria-hidden="true">☺</span>Profile &amp; documents</a></li>
+        <li><a href="#/settings" data-nav="settings"><span class="ico" aria-hidden="true">⚙</span>Settings</a></li>
+        <li><a href="#/activity" data-nav="activity"><span class="ico" aria-hidden="true">≡</span>AI activity</a></li>
+      </ul>
+      <div class="sidebar-foot">
+        <div id="ai-chip" class="ai-chip" title="AI tool"></div>
+        <div class="muted small">v{{VERSION}}</div>
+      </div>
+    </nav>
+    <main id="main" tabindex="-1"></main>
+  </div>
+  <div id="runbar" class="runbar" hidden></div>
+  <div id="modal-root"></div>
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+</body>
+</html>

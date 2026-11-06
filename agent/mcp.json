@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "playwright": {
+      "description": "Browser for job boards and application forms. Keeps its own logged-in profile in workspace/browser-profile.",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--browser", "chrome", "--user-data-dir", "{workspace}/browser-profile"]
+    }
+  }
+}

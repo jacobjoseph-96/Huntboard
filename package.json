@@ -1,0 +1,36 @@
+{
+  "name": "huntboard",
+  "version": "0.1.0",
+  "description": "Local job search and application app driven by the AI tool you already use: finds jobs that fit your CV and area, tracks them as tickets, tailors documents, applies and prepares you for interviews.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jacobjoseph-96/Huntboard.git"
+  },
+  "homepage": "https://github.com/jacobjoseph-96/Huntboard#readme",
+  "bugs": {
+    "url": "https://github.com/jacobjoseph-96/Huntboard/issues"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "hunt": "tools/hunt.js"
+  },
+  "scripts": {
+    "start": "node app/server.js --open",
+    "serve": "node app/server.js",
+    "sync": "node tools/sync-agents.js",
+    "sync:check": "node tools/sync-agents.js --check",
+    "test": "node --test \"test/*.test.js\"",
+    "postinstall": "node tools/sync-agents.js --quiet"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "mammoth": "^1.8.0",
+    "marked": "^12.0.2",
+    "pdf-lib": "^1.17.1",
+    "unpdf": "^0.12.1"
+  }
+}
