@@ -266,3 +266,8 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible, a:focus-visible {
 .mono { overflow-wrap: anywhere; }
 .choice-card > span { flex: 1; min-width: 0; }
 .grid.stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* Full file paths on the ticket page, to copy into an upload dialog */
+.path-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 8px; width: 100%; }
+.path-row .path { flex: 1 1 100%; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; word-break: break-all; user-select: all; background: var(--panel-2); border: 1px solid var(--line-2); padding: 4px 6px; border-radius: 6px; }
+ul.files li { flex-wrap: wrap; }

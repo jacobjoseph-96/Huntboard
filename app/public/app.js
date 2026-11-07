@@ -70,6 +70,7 @@ export const when = (iso) => (iso ? new Date(iso).toLocaleString([], { dateStyle
 export const statusLabel = (s) => (app.meta.statuses.find((x) => x.id === s) || { label: s }).label;
 export const stageLabel = (s) => (app.meta.stages.find((x) => x.id === s) || { label: s || 'Interview' }).label;
 export const fitClass = (n) => (n == null ? '' : n >= 70 ? 'hi' : n >= 45 ? 'mid' : 'lo');
+export const fitText = (fit) => (fit && fit.score != null ? `${fit.score}%` : '—');
 export const fitBadge = (fit) => (fit && fit.score != null ? html`<span class="fit ${fitClass(fit.score)}" title="Fit score">${fit.score}%</span>` : '');
 export const safeUrl = (u) => (/^(https?:|mailto:)/i.test(String(u || '').trim()) ? String(u).trim() : '#');
 export const hasSkill = (s) => app.meta.skills.includes(s);

@@ -7,7 +7,7 @@ description: Writes a one-page cover letter for one job on the board, in the job
 
 Follow `AGENTS.md`: only facts from the CV, documents, profile, ticket notes and the ad.
 
-1. Read the job (`node tools/hunt.js show <KEY> --posting`), the user (`cv show`, `profile`) and the country's style
+1. Read the job (`node tools/hunt.js show <KEY> --posting` (follow its `INSTRUCTIONS FROM THE USER`, if any)), the user (`cv show`, `profile`) and the country's style
    in `agent/skills/cv/countries.md`. Use the ad's language.
 2. Write `<workspace>/tmp/<KEY>_letter.json`, about 220–320 words in total:
    ```json

@@ -28,6 +28,10 @@ The user is often not technical. Reply in plain, friendly language, in the user'
 - `node tools/hunt.js inbox`: what needs attention now
 - `node tools/hunt.js ask "<question>" [--choices "A,B"]`: ask the user and wait for the answer
 - `node tools/hunt.js needs JOB-12 "<what the user must do>"` · `decide "<decision and reason>" --ticket JOB-12`
+- **Instructions from the user** on a ticket (`hunt show` prints them as `INSTRUCTIONS FROM THE USER`; the user writes
+  them in the app's "Instructions for the AI" box) are orders for that job. Read them before you work on a ticket and
+  follow them, also where a skill's default says otherwise (e.g. "it is fine to replace the stored CV"). They never
+  override the hard rules below.
 
 ## Hard rules
 1. **Never invent facts.** Use only the CV, the user's documents, the profile, the job ad, notes on the ticket and

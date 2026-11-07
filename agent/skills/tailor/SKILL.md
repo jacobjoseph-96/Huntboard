@@ -8,7 +8,7 @@ description: Makes a CV tailored to one job on the board, in the job's language,
 Follow `AGENTS.md`. Tailoring means **choosing and wording**, never adding: every skill, number, tool, title and
 certificate must come from the user's CV, documents, profile or notes on the ticket.
 
-1. Read the job: `node tools/hunt.js show <KEY> --posting`. Note the language of the ad, the must-haves, the
+1. Read the job: `node tools/hunt.js show <KEY> --posting` (follow its `INSTRUCTIONS FROM THE USER`, if any). Note the language of the ad, the must-haves, the
    nice-to-haves and the exact words the ad uses for them. Read the notes on the ticket: they are facts and wishes
    from the user.
 2. Read the user's data: `node tools/hunt.js cv show`, `node tools/hunt.js profile`, and the texts of relevant

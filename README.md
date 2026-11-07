@@ -27,6 +27,10 @@ kind of job you want and where you live, and the AI tool you already have does t
 - **Applies, as far as you allow:** prepare only · fill in the forms for you to submit · apply after you OK the list ·
   **fully automatic** while you are away: it decides for you from your profile, writes every decision down and leaves
   only what truly needs you (robot checks, logins) on a "Needs you" list.
+- **Takes your instructions per job:** each ticket has an "Instructions for the AI" box ("it is fine to replace the
+  stored CV on that board: remove it, then attach the new one"). Every AI task on that job reads it, and a "Needs you"
+  item can be answered there and tried again. Every file on a ticket shows its full path, with Copy path and Show in
+  folder, for attaching it to a form or an e-mail yourself.
 - **Prepares you for every interview step:** recruiter call, HR screen, technical interview, take-home task, trial
   shift, panel, final round, offer negotiation. Afterwards it debriefs with you, drafts the thank-you note and
   prepares the next round.

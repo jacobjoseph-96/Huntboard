@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- "Instructions for the AI" box on every ticket, read by every AI task on that job (also `hunt instruct`); "Tell the
+  AI" on a "Needs you" banner answers it and tries again. Full file paths on tickets with Copy path and Show in folder.
+
 ## 0.1.0 (first public version)
 
 - Local app in its own window: Home / to-do, Find jobs, Board, tickets, Profile & documents, Settings, chat with the

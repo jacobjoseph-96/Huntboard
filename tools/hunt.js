@@ -44,6 +44,7 @@ Tickets
   note <KEY> "text"                      add a comment
   followed-up <KEY> "how"               record a follow-up (resets the reminder)
   needs <KEY> "what the user must do"    put the job on the user's "Needs you" list (--done clears it)
+  instruct <KEY> "what the AI should do"  the user's instructions for this job (--clear removes them)
   posting <KEY> <file.md>                save the full job ad text
   files <KEY>                            files in the ticket folder
 
@@ -145,7 +146,7 @@ function readJsonFile(file) {
 }
 
 function line(t) {
-  const fit = t.fit && t.fit.score != null ? `${t.fit.score}%` : '-';
+  const fit = store.fitLabel(t.fit);
   const stage = t.status === 'interview' && t.interview.stage ? ` [${store.stageLabel(t.interview.stage)}]` : '';
   const status = store.STATUS_LABELS[t.status] + (t.resolution ? `/${t.resolution}` : '') + stage;
   return [t.key, status, fit, t.title, t.company, t.location, t.link].join(' | ');
@@ -158,7 +159,11 @@ function printTicket(t, withPosting) {
     if (p[k]) console.log(`  ${k}: ${k === 'status' ? store.STATUS_LABELS[p[k]] : p[k]}`);
   }
   if (t.needs) console.log(`  NEEDS THE USER: ${t.needs.text}`);
-  if (t.fit) console.log(`  fit: ${t.fit.score ?? '-'}% ${t.fit.verdict || ''}${t.fit.reasons.length ? `\n    + ${t.fit.reasons.join('\n    + ')}` : ''}${t.fit.red_flags.length ? `\n    ! ${t.fit.red_flags.join('\n    ! ')}` : ''}`);
+  if (t.instructions && t.instructions.text) {
+    console.log(`  INSTRUCTIONS FROM THE USER (${t.instructions.at.slice(0, 10)}; do this for this job, they win over a skill's default, never over the hard rules):`);
+    for (const line of t.instructions.text.split('\n')) console.log(`    ${line}`);
+  }
+  if (t.fit) console.log(`  fit: ${store.fitLabel(t.fit)}${t.fit.rank != null ? ` (queue rank ${t.fit.rank} points)` : ''} ${t.fit.verdict || ''}${t.fit.reasons.length ? `\n    + ${t.fit.reasons.join('\n    + ')}` : ''}${t.fit.red_flags.length ? `\n    ! ${t.fit.red_flags.join('\n    ! ')}` : ''}`);
   for (const r of t.interview.rounds || []) {
     console.log(`  interview round ${r.n}: ${store.stageLabel(r.stage)}${r.at ? ` on ${r.at}` : ''}${r.format ? `, ${r.format}` : ''}${r.interviewers.length ? `, with ${r.interviewers.join(', ')}` : ''}${r.prep_dir ? `, prep: ${r.prep_dir}` : ''}`);
     if (r.invitation) console.log(`    invitation: ${r.invitation.replace(/\s+/g, ' ').slice(0, 600)}`);
@@ -410,6 +415,14 @@ async function main() {
       console.log(`Added ${res.added.length} ticket(s)${res.added.length ? `: ${res.added.map((t) => t.key).join(', ')}` : ''}.`);
       if (res.duplicates.length) console.log(`Skipped ${res.duplicates.length} duplicate(s):\n  - ${res.duplicates.map((d) => `"${d.job.title}" at ${d.job.company || '?'} (already ${d.key})`).join('\n  - ')}`);
       if (res.invalid.length) console.log(`Skipped ${res.invalid.length} entr${res.invalid.length > 1 ? 'ies' : 'y'} without a title.`);
+      return;
+    }
+
+    case 'instruct': {
+      const key = pos[0];
+      if (!key || (!pos[1] && !opt.clear)) fail('Usage: hunt instruct <KEY> "<what the AI should do for this job>" | --clear');
+      const t = store.setInstructions(key, opt.clear ? null : pos.slice(1).join(' '), { by: 'user' });
+      console.log(t.instructions ? `${t.key}: instructions saved.` : `${t.key}: instructions removed.`);
       return;
     }
 

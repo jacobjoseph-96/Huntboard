@@ -27,6 +27,10 @@ hidden fields, invent an answer, accept "update my profile" offers, submit twice
 - `auto`: show the list once: `node tools/hunt.js ask "Apply to these N jobs? KEY – job – company …" --choices "Yes, apply,No"`.
   Continue only on yes.
 
+**Instructions from the user** (`INSTRUCTIONS FROM THE USER` in `hunt show`, also listed in your task): do what they
+say for that job, also where this file says otherwise (e.g. "it is fine to delete the stored CV and attach the new one").
+A ticket that was "Needs you" and now has instructions answering it is yours again.
+
 ## 2. Documents (for each job)
 1. Tailored CV: follow the `tailor` skill (skip if `docs/` already has a CV made for this job).
 2. Cover letter: follow the `cover-letter` skill when the job or the country expects one, or the form has a field.

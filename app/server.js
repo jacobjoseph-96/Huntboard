@@ -203,7 +203,8 @@ route('POST', '/api/tickets', async (req) => {
 route('GET', '/api/tickets/:key', (req, p) => {
   const t = store.getTicket(p.key);
   if (!t) throw new HttpError(404, `No ticket ${p.key}`);
-  return { ticket: ticketView(t), posting: store.readPosting(t.key), files: store.listFiles(t.key) };
+  // dir: so the page can show full, copyable file paths (to attach a file to a form or an e-mail by hand).
+  return { ticket: ticketView(t), posting: store.readPosting(t.key), files: store.listFiles(t.key), dir: path.resolve(t._dir) };
 });
 route('PATCH', '/api/tickets/:key', async (req, p) => ticketView(store.setFields(p.key, await readBody(req), { by: 'user' })));
 route('POST', '/api/tickets/:key/move', async (req, p) => {
@@ -214,6 +215,25 @@ route('POST', '/api/tickets/:key/move', async (req, p) => {
     return ticketView(t);
   }
   return ticketView(store.moveTicket(p.key, b.status, { by: 'user', resolution: b.resolution, note: b.note }));
+});
+route('PUT', '/api/tickets/:key/instructions', async (req, p) => {
+  const b = await readBody(req);
+  const t = store.setInstructions(p.key, b.text, { by: 'user' });
+  // "Tell the AI" on a Needs-you banner, then "try again": the user answered it, so it is no longer theirs to do.
+  if (b.clear_needs && t.needs) return ticketView(store.setNeeds(p.key, null, { by: 'user' }));
+  soon('tickets');
+  return ticketView(t);
+});
+// Show a ticket file in the file manager, selected.
+route('POST', '/api/reveal', async (req) => {
+  const b = await readBody(req);
+  const file = b.key ? safeJoin(store.mustGet(String(b.key))._dir, String(b.path || '')) : null;
+  if (!file || !fs.existsSync(file)) throw new HttpError(404, 'That file is not there any more.');
+  const { spawn } = require('child_process');
+  const [cmd, args] = process.platform === 'win32' ? ['explorer.exe', [`/select,"${path.resolve(file)}"`]]
+    : process.platform === 'darwin' ? ['open', ['-R', file]] : ['xdg-open', [path.dirname(file)]];
+  spawn(cmd, args, { detached: true, stdio: 'ignore', windowsVerbatimArguments: process.platform === 'win32' }).unref();
+  return { ok: true, path: path.resolve(file) };
 });
 route('POST', '/api/tickets/:key/notes', async (req, p) => ticketView(store.addNote(p.key, (await readBody(req)).text, { by: 'user' })));
 route('POST', '/api/tickets/:key/rounds', async (req, p) => {
