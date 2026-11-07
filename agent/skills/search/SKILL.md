@@ -12,7 +12,8 @@ target named in your task).
 2. Run `node tools/hunt.js search run --target <id>`. It searches the API boards, drops jobs that are clearly wrong
    (too far, too old, already on the board, the user's "avoid" words, scams), reads the ad texts and prints a report.
 3. **Browser boards** listed in the report: search each one with the browser tools, following its playbook in
-   `boards/playbooks/`. Use the plan's search words and towns, the first 2 result pages per search word, and open
+   `boards/playbooks/`. Use the plan's search words and towns, the plan's time range (`max_age_days`: the board's
+   "posted in the last N days" filter, the nearest choice that covers it), the first 2 result pages per search word, and open
    the ads that look relevant to copy their full text. Save the jobs as a JSON array in `<workspace>/tmp/` and run
    `node tools/hunt.js ingest <file> --target <id> --source <board id>`. If a board shows a robot check, follow the
    playbook (never get around it). Do not spend more than about 15 minutes on one board.

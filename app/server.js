@@ -376,6 +376,13 @@ route('PUT', '/api/tickets/:key/needs', async (req, p) => {
 route('GET', '/api/plan', () => require('../lib/plan').loadAll().targets);
 route('GET', '/api/boards', () => require('../lib/boards').load().map((b) => ({ id: b.id, name: b.name, url: b.url, kind: b.access.kind, verified: b.verified })));
 route('PUT', '/api/plan/:target/boards/:board', async (req, p) => require('../lib/plan').toggleBoard(p.target, p.board, (await readBody(req)).enabled));
+route('PUT', '/api/plan/:target/age', async (req, p) => {
+  try {
+    return require('../lib/plan').setMaxAge(p.target, (await readBody(req)).days);
+  } catch (err) {
+    throw new HttpError(400, err.message);
+  }
+});
 
 route('GET', '/api/export.xlsx', async (req, p, url, res) => {
   const file = path.join(paths.ws('tmp'), 'huntboard_export.xlsx');

@@ -98,6 +98,12 @@ test('filters give clear reasons', () => {
   assert.strictEqual(gate({ ...base, body: 'Join our network marketing team' }), 'looks like a scam or paid scheme');
   const anyGate = makeGate({ profile, target: { ...target, roles: { scope: 'any', titles: [] } }, plan, tickets: [] , now: Date.parse('2026-11-06') });
   assert.strictEqual(anyGate({ ...base, title: 'Magazziniere' }), null);
+  // Same-day plan (max_age_days 1), evening search: yesterday's date-only ad is in, the day before is out.
+  const dayGate = makeGate({ profile, target, plan: { ...plan, max_age_days: 1 }, tickets: [], now: new Date(2026, 10, 7, 21, 19).getTime() });
+  assert.strictEqual(dayGate({ ...base, posted: '2026-11-07' }), null);
+  assert.strictEqual(dayGate({ ...base, posted: '2026-11-06' }), null);
+  assert.strictEqual(dayGate({ ...base, posted: '2026-11-05' }), 'too old');
+  assert.strictEqual(dayGate({ ...base, posted: '2026-11-05T20:00:00Z' }), 'too old');
 });
 
 test('funnel stages must add up', () => {
@@ -126,6 +132,12 @@ test('search plan validation and screening of found jobs', async () => {
   assert.throws(() => planLib.set('t1', { queries: [], boards: ['nope'] }), /unknown board "nope"[\s\S]*search word/);
   const plan = planLib.set('t1', { country: 'IT', queries: ['cameriere'], title_keywords: ['cameriere'], towns: ['Rimini'], boards: ['indeed', { id: 'linkedin', enabled: false }] });
   assert.deepStrictEqual(plan.boards.map((b) => [b.id, b.enabled]), [['indeed', true], ['linkedin', false]]);
+  assert.strictEqual(plan.max_age_days, 14);
+  assert.strictEqual(planLib.setMaxAge('t1', 7).max_age_days, 7);
+  assert.strictEqual(planLib.get('t1').max_age_days, 7);
+  assert.throws(() => planLib.setMaxAge('t1', 5), /Choose one of/);
+  assert.throws(() => planLib.setMaxAge('nope', 7), /No search plan/);
+  planLib.setMaxAge('t1', 14);
   const profile = profileLib.loadProfile();
   profile.location = { ...profile.location, city: 'Rimini', country: 'Italy', remote: 'no' };
   const target = { id: 't1', job_types: ['part_time'], roles: { scope: 'cv', titles: [] } };

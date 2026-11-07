@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Find jobs: "Jobs posted in the last …" picker on each search (day, 3 days, week, 2 weeks, month, 2 months).
+  Widening it brings back ads that an earlier search dropped only as too old.
+- A date-only "posted" (Arbeitsagentur, EURES) counts as a calendar day: a 1-day search keeps yesterday's ads
+  instead of dropping them as 40+ hours old in the evening.
 - "Instructions for the AI" box on every ticket, read by every AI task on that job (also `hunt instruct`); "Tell the
   AI" on a "Needs you" banner answers it and tries again. Full file paths on tickets with Copy path and Show in folder.
 - Job ad details: saving or fetching the ad text fills the empty Location, On site / hybrid / remote, Job type,
