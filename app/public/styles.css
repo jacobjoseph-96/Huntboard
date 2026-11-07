@@ -102,6 +102,9 @@ p { margin: 0 0 10px; }
 .nav .ico { width: 18px; text-align: center; opacity: .85; }
 .nav .sep { height: 1px; background: var(--line-2); margin: 8px 6px; }
 .nav .pill { margin-left: auto; }
+.navhist { display: flex; gap: 6px; padding: 0 4px 10px; }
+.navhist .btn { flex: 1; justify-content: center; gap: 4px; }
+.navhist .btn:disabled { opacity: .4; cursor: default; }
 .sidebar-foot { margin-top: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
 .ai-chip { font-size: 12px; color: var(--muted); }
 .ai-chip b { color: var(--ink-2); font-weight: 600; }
@@ -198,7 +201,7 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible, a:focus-visible {
 
 /* ---- ticket ---- */
 .ticket-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
-@media (max-width: 980px) { .ticket-layout { grid-template-columns: 1fr; } .shell { grid-template-columns: 64px 1fr; } .brand span, .nav a { font-size: 0; } .nav a .ico { font-size: 16px; } .nav .pill { display: none; } }
+@media (max-width: 980px) { .ticket-layout { grid-template-columns: 1fr; } .shell { grid-template-columns: 64px 1fr; } .brand span, .nav a, .navhist span { font-size: 0; } .navhist { flex-direction: column; } .nav a .ico { font-size: 16px; } .nav .pill { display: none; } }
 .fields dt { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-top: 10px; }
 .fields dd { margin: 2px 0 0; word-break: break-word; }
 .history { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }

@@ -57,6 +57,23 @@ function instructionsCard(t) {
   </div>`;
 }
 
+// Delete: the folder goes to the trash (restorable) and no search brings the job back.
+async function deleteDialog(t) {
+  const body = html`<p>Take <b>${t.key} · ${t.company || t.title}</b> off the board? The folder moves to
+      <span class="mono">workspace/trash/</span>, so it can be restored (<span class="mono">node tools/hunt.js restore ${t.key}</span>).
+      A search will not add this job again.</p>`.s;
+  const out = await modal({ title: 'Delete this job?', body, actions: [
+    { label: 'Cancel', value: null },
+    { label: 'Delete', kind: 'danger', value: {} },
+  ] });
+  if (!out) return;
+  try {
+    await api('DELETE', `/api/tickets/${t.key}`, out);
+    toast(`${t.key} deleted.`);
+    location.hash = '#/board';
+  } catch (err) { toast(err.message, true); }
+}
+
 // Edit the instructions; from a Needs-you banner it is "tell the AI what to do", with a retry.
 async function instructionsDialog(t, { fromNeeds = false } = {}) {
   const retry = suggested(t) && hasSkill(suggested(t)) ? 'Save and try again' : null;
@@ -109,6 +126,7 @@ function draw() {
       <label class="field" style="min-width:170px">Move to
         <select id="move">${statuses.map((s) => html`<option value="${s.id}" ${s.id === t.status ? 'selected' : ''}>${s.label}</option>`)}</select></label>
       ${t.link ? html`<a class="btn" href="${safeUrl(t.link)}" target="_blank" rel="noopener noreferrer">Open the ad ↗</a>` : ''}
+      <button class="btn danger" id="delete" type="button" title="Take this job off the board">Delete</button>
     </div>
 
     ${t.needs ? html`<div class="notice warn row" style="margin-bottom:12px"><span><b>Needs you:</b> ${t.needs.text}</span><span class="spacer"></span><button class="btn small" id="needs-tell">Tell the AI</button><button class="btn small" id="needs-done">I did it</button></div>` : ''}
@@ -141,6 +159,7 @@ function draw() {
       if (out) { toast(`Moved to ${statusLabel(out.status)}`); await reload(); } else e.target.value = t.status;
     } catch (err) { toast(err.message, true); e.target.value = t.status; }
   });
+  $('#delete', mainEl).addEventListener('click', () => deleteDialog(t));
   $('#instr-edit', mainEl).addEventListener('click', () => instructionsDialog(t));
   const ic = $('#instr-clear', mainEl);
   if (ic) ic.addEventListener('click', async () => {
@@ -151,7 +170,7 @@ function draw() {
   if (nt) nt.addEventListener('click', () => instructionsDialog(t, { fromNeeds: true }));
   const nd = $('#needs-done', mainEl);
   if (nd) nd.addEventListener('click', async () => { await api('PUT', `/api/tickets/${t.key}/needs`, { text: null }).catch((err) => toast(err.message, true)); await reload(); });
-  $('[data-skill]', mainEl).forEach((b) => b.addEventListener('click', () => startRun(b.dataset.skill, { ticket: t.key })));
+  $$('[data-skill]', mainEl).forEach((b) => b.addEventListener('click', () => startRun(b.dataset.skill, { ticket: t.key })));
   $$('[data-tab]', mainEl).forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab; draw(); }));
   $$('[data-edit]', mainEl).forEach((el) => {
     const go = () => editField(el.dataset.edit);
@@ -171,7 +190,10 @@ function suggested(t) {
 function tabBody(t) {
   if (tab === 'posting') {
     return html`${data.posting ? html`<div class="md">${raw(md(data.posting))}</div>` : html`<div class="empty">No job ad text saved yet.</div>`}
-      <div class="row end" style="margin-top:12px"><button class="btn small" id="edit-posting">${data.posting ? 'Edit the ad text' : 'Paste the ad text'}</button></div>`.s;
+      <div class="row end" style="margin-top:12px">
+        ${t.link ? html`<button class="btn small" id="fetch-ad" title="${data.posting ? 'Read the ad again from its link and replace the saved text' : 'Read the ad from its link; also fills location, job type, salary, apply-by and contact where empty'}">${data.posting ? 'Fetch the ad again' : 'Fetch the ad'}</button>` : ''}
+        <button class="btn small" id="edit-posting">${data.posting ? 'Edit the ad text' : 'Paste the ad text'}</button></div>
+      <p class="muted small" style="margin-top:6px">Saving the ad text also fills the empty details (location, on site / hybrid / remote, job type, salary, apply by, contact).</p>`.s;
   }
   if (tab === 'fit') {
     const f = t.fit;
@@ -216,6 +238,18 @@ function bindTab(t) {
     const text = await modal({ title: 'Job ad text', wide: true, body: html`<textarea name="p" rows="16" style="width:100%">${data.posting}</textarea>`.s, actions: [{ label: 'Cancel', value: null }, { label: 'Save', kind: 'primary', onClick: (r) => r.querySelector('[name=p]').value }] });
     if (text == null) return;
     await api('PUT', `/api/tickets/${t.key}/posting`, { text }).catch((err) => toast(err.message, true));
+    await reload();
+  });
+  const fa = $('#fetch-ad', mainEl);
+  if (fa) fa.addEventListener('click', async () => {
+    fa.disabled = true;
+    fa.textContent = 'Fetching…';
+    try {
+      const r = await api('POST', `/api/tickets/${t.key}/fetch-ad`, { replace: Boolean(data.posting) });
+      toast(`${r.saved ? `Saved the ad text from ${r.from}` : 'The ad text was already saved'}${r.filled.length ? `; filled ${r.filled.join(', ')}` : '; no empty detail it could fill'}`);
+    } catch (err) {
+      toast(err.message, true);
+    }
     await reload();
   });
   const an = $('#add-note', mainEl);

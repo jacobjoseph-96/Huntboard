@@ -47,6 +47,8 @@ Tickets
   instruct <KEY> "what the AI should do"  the user's instructions for this job (--clear removes them)
   posting <KEY> <file.md>                save the full job ad text
   files <KEY>                            files in the ticket folder
+  delete <KEY>                           take a job off the board (to workspace/trash/)
+  restore [<KEY>]                        put a deleted job back (no key: list the deleted ones)
 
 Job search
   boards list|suggest [--target t1]|validate|add <file.json>   job board registry; suggest ranks boards for a search
@@ -423,6 +425,27 @@ async function main() {
       if (!key || (!pos[1] && !opt.clear)) fail('Usage: hunt instruct <KEY> "<what the AI should do for this job>" | --clear');
       const t = store.setInstructions(key, opt.clear ? null : pos.slice(1).join(' '), { by: 'user' });
       console.log(t.instructions ? `${t.key}: instructions saved.` : `${t.key}: instructions removed.`);
+      return;
+    }
+
+    // Take a job off the board (folder to workspace/trash/, kept off by searches).
+    case 'delete': {
+      const key = pos[0];
+      if (!key) fail('Usage: hunt delete <KEY> [--note ".."]');
+      const t = store.mustGet(key);
+      const rec = store.deleteTicket(t.key, { by: opt.by === 'agent' ? 'agent' : 'user', note: typeof opt.note === 'string' ? opt.note : '' });
+      console.log(`${rec.key} (${rec.company}) deleted; folder in workspace/trash/${rec.folder}. Undo: hunt restore ${rec.key}`);
+      return;
+    }
+
+    case 'restore': {
+      if (!pos[0]) {
+        const list = store.listDeleted();
+        console.log(list.length ? list.map((d) => `${d.key}  ${d.company} · ${d.title}  (${d.at.slice(0, 10)})`).join('\n') : 'Nothing deleted.');
+        return;
+      }
+      const t = store.restoreTicket(pos[0], { by: 'user' });
+      console.log(`${t.key} is back on the board (${store.STATUS_LABELS[t.status]}).`);
       return;
     }
 

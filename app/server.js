@@ -216,6 +216,42 @@ route('POST', '/api/tickets/:key/move', async (req, p) => {
   }
   return ticketView(store.moveTicket(p.key, b.status, { by: 'user', resolution: b.resolution, note: b.note }));
 });
+// Delete a ticket: its folder goes to workspace/trash/ (restorable) and a search will not bring the job back.
+route('DELETE', '/api/tickets/:key', async (req, p) => {
+  const b = await readBody(req);
+  const t = store.getTicket(p.key);
+  if (!t) throw new HttpError(404, `No ticket ${p.key}`);
+  if (runner.current && runner.current.run.ticket === t.key) throw new HttpError(409, `An AI task is working on ${t.key}; stop it first.`);
+  const rec = store.deleteTicket(t.key, { by: 'user', note: b.note || '' });
+  soon('tickets');
+  return { deleted: rec };
+});
+route('GET', '/api/deleted', () => store.listDeleted());
+route('POST', '/api/tickets/:key/restore', async (req, p) => {
+  const t = store.restoreTicket(p.key, { by: 'user' });
+  soon('tickets');
+  return ticketView(t);
+});
+const fetched = (r, from) => ({ ticket: ticketView(r.ticket), saved: r.saved, filled: r.filled, from });
+// Fetch the job ad for a ticket (LinkedIn guest page, Arbeitsagentur API, the page's schema.org JobPosting). Saves
+// it as the Job ad (replacing a saved one only when asked) and fills the empty detail fields.
+route('POST', '/api/tickets/:key/fetch-ad', async (req, p) => {
+  const b = await readBody(req);
+  const t = store.mustGet(p.key);
+  if (!/^https?:\/\//i.test(t.link || '')) throw new HttpError(409, 'This ticket has no link to fetch the ad from. Paste the ad text instead.');
+  const li = t.link.match(/linkedin\.com\/(?:jobs\/view|comm\/jobs\/view)\/(?:[^/?]*-)?(\d{6,})/i);
+  const ba = t.link.match(/arbeitsagentur\.de\/jobsuche\/jobdetail\/([\w-]+)/i);
+  const row = li ? { source: 'LinkedIn', native_id: li[1], url: t.link } : ba ? { source: 'Arbeitsagentur', native_id: ba[1], url: t.link } : { source: t.source, url: t.link };
+  const res = await require('../lib/adtext').read(row);
+  if (!res.ok || !res.text) {
+    const why = { rate_limited: 'LinkedIn is limiting requests right now (HTTP 429). Try again in a while, or paste the ad text.',
+      ad_gone: 'The ad is gone (404/410): it was taken down.', no_link: 'This ticket has no link to fetch the ad from.' }[res.reason]
+      || `Could not read the ad (${res.reason || res.method}${res.error ? ': ' + res.error : ''}). Paste the ad text instead.`;
+    throw new HttpError(res.reason === 'rate_limited' ? 429 : 409, why);
+  }
+  const from = { linkedin: 'LinkedIn', 'ba-api': 'the Arbeitsagentur', jobposting: 'the ad page', http: 'the ad page', api: 'the search' }[res.method] || 'the ad page';
+  return fetched(store.fillFromAd(t.key, { text: res.text, extra: res.extra || {}, from: `from ${from}`, replace: Boolean(b.replace), by: 'user' }), from);
+});
 route('PUT', '/api/tickets/:key/instructions', async (req, p) => {
   const b = await readBody(req);
   const t = store.setInstructions(p.key, b.text, { by: 'user' });

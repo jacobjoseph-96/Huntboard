@@ -4,6 +4,13 @@
 
 - "Instructions for the AI" box on every ticket, read by every AI task on that job (also `hunt instruct`); "Tell the
   AI" on a "Needs you" banner answers it and tries again. Full file paths on tickets with Copy path and Show in folder.
+- Job ad details: saving or fetching the ad text fills the empty Location, On site / hybrid / remote, Job type,
+  Salary, Apply by and Contact fields. "Fetch the ad" on the Job ad tab reads it from its link (LinkedIn guest page,
+  Arbeitsagentur, schema.org JobPosting).
+- Board sort: newest / oldest found, applied, last changed, newest ad, apply-by, fit, company, title, ticket number.
+- Back / Forward buttons in the sidebar; the board keeps each column's scroll when you come back from a ticket.
+- Delete a job from the board (folder to `workspace/trash/`, kept off by later searches); `hunt delete` /
+  `hunt restore` bring it back.
 
 ## 0.1.0 (first public version)
 

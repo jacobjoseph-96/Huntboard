@@ -321,7 +321,32 @@ function parseHash() {
   return { name, args: rest.map(decodeURIComponent), query: Object.fromEntries(new URLSearchParams(query)) };
 }
 
+// Back / Forward buttons (the app often runs in a window with no browser toolbar). Each history entry gets a
+// number, so the buttons know whether there is somewhere to go; a page's scroll is put back when you return to it.
+let navAt = 0;
+let navMax = 0;
+try { navMax = Number(sessionStorage.getItem('hb.navMax')) || 0; } catch { /* storage blocked */ }
+const scrollAt = new Map();
+function trackNav() {
+  let i = history.state && history.state.hbNav;
+  const returning = Boolean(i);
+  if (!i) {
+    i = navAt + 1;
+    navMax = i;
+    history.replaceState({ ...(history.state || {}), hbNav: i }, '');
+  }
+  navAt = i;
+  if (navAt > navMax) navMax = navAt;
+  try { sessionStorage.setItem('hb.navMax', String(navMax)); } catch { /* storage blocked */ }
+  $('#nav-back').disabled = navAt <= 1;
+  $('#nav-fwd').disabled = navAt >= navMax;
+  return returning;
+}
+
 async function route() {
+  const main0 = $('#main');
+  if (navAt) scrollAt.set(navAt, main0.scrollTop);
+  const returning = trackNav();
   const { name, args, query } = parseHash();
   const page = PAGES[name] || home;
   if (app.page && app.page.leave) app.page.leave();
@@ -336,6 +361,7 @@ async function route() {
     main.innerHTML = html`<div class="page"><div class="notice bad">${err.message}</div></div>`.s;
   }
   main.focus({ preventScroll: true });
+  if (returning && scrollAt.has(navAt)) main.scrollTop = scrollAt.get(navAt);
   renderRunbar();
 }
 
@@ -368,6 +394,8 @@ async function boot() {
   for (const r of await api('GET', '/api/runs')) app.runs.set(r.id, r);
   if (!app.state.settings.onboarding_done && !location.hash.startsWith('#/setup')) location.hash = '#/setup';
   window.addEventListener('hashchange', route);
+  $('#nav-back').addEventListener('click', () => history.back());
+  $('#nav-fwd').addEventListener('click', () => history.forward());
   await route();
   connect();
   checkAsks();

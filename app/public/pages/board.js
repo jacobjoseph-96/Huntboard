@@ -4,6 +4,54 @@ let mainEl = null;
 let tickets = [];
 let filter = { q: '', target: '', showClosed: false };
 
+// Order of the cards inside each column. Remembered in this browser only.
+const SORTS = [
+  ['found_desc', 'Newest found first'],
+  ['found_asc', 'Oldest found first'],
+  ['applied_desc', 'Applied most recently'],
+  ['applied_asc', 'Applied longest ago'],
+  ['changed_desc', 'Last changed'],
+  ['posted_desc', 'Newest ad first'],
+  ['deadline_asc', 'Apply-by date, soonest'],
+  ['fit_desc', 'Best fit first'],
+  ['company_asc', 'Company A–Z'],
+  ['company_desc', 'Company Z–A'],
+  ['title_asc', 'Job title A–Z'],
+  ['key_asc', 'Ticket number'],
+];
+let sortBy = 'found_desc';
+try { sortBy = localStorage.getItem('hb.board.sort') || sortBy; } catch { /* storage blocked */ }
+if (!SORTS.some(([id]) => id === sortBy)) sortBy = 'found_desc';
+
+const time = (v) => { const n = Date.parse(v || ''); return Number.isNaN(n) ? null : n; };
+const lastChange = (t) => time(t.status_changed_at) ?? time((t.history || []).slice(-1)[0]?.at) ?? time(t.created_at);
+const keyN = (t) => Number(String(t.key).replace(/\D/g, '')) || 0;
+const KEYS = {
+  found: (t) => time(t.found_at || t.created_at),
+  applied: (t) => time(t.applied_at),
+  changed: lastChange,
+  posted: (t) => time(t.posted),
+  deadline: (t) => time(t.deadline),
+  fit: (t) => (t.fit && typeof t.fit.score === 'number' ? t.fit.score : null),
+  company: (t) => (t.company || '').trim().toLowerCase() || null,
+  title: (t) => (t.title || '').trim().toLowerCase() || null,
+  key: keyN,
+};
+
+// Cards without the value (never applied, no apply-by date, no fit) go last whichever way the list runs.
+function sorted(list) {
+  const [field, dir] = sortBy.split('_');
+  const get = KEYS[field];
+  const sign = dir === 'desc' ? -1 : 1;
+  return list.map((t) => [t, get(t)]).sort(([a, x], [b, y]) => {
+    if (x == null && y == null) return keyN(b) - keyN(a);
+    if (x == null) return 1;
+    if (y == null) return -1;
+    const c = typeof x === 'string' ? x.localeCompare(y, 'de') : x - y;
+    return c ? sign * c : keyN(b) - keyN(a);
+  }).map(([t]) => t);
+}
+
 export async function render(main) {
   mainEl = main;
   tickets = await api('GET', '/api/tickets');
@@ -17,20 +65,35 @@ export async function render(main) {
       <button class="chip ${!filter.target ? 'on' : ''}" data-target="">All searches</button>
       ${targets.map((t) => html`<button class="chip ${filter.target === t.id ? 'on' : ''}" data-target="${t.id}">${t.name}</button>`)}
       <span class="spacer"></span>
+      <label class="small muted" for="sort">Sort</label>
+      <select id="sort" class="small" title="Order of the cards in each column">${SORTS.map(([id, label]) => html`<option value="${id}" ${sortBy === id ? 'selected' : ''}>${label}</option>`)}</select>
       <label class="check small"><input type="checkbox" id="closed" ${filter.showClosed ? 'checked' : ''}> Show closed</label>
     </div>
     <div class="board" id="board"></div></div>`.s;
   drawBoard();
+  // Back from a ticket: each column scrolled where it was.
+  for (const [id, y] of Object.entries(colScroll)) { const b = $(`.col[data-status="${id}"] .col-body`, main); if (b) b.scrollTop = y; }
   $('#q', main).addEventListener('input', (e) => { filter.q = e.target.value; drawBoard(); });
+  $('#sort', main).addEventListener('change', (e) => {
+    sortBy = e.target.value;
+    try { localStorage.setItem('hb.board.sort', sortBy); } catch { /* storage blocked */ }
+    drawBoard();
+  });
   $('#closed', main).addEventListener('change', (e) => { filter.showClosed = e.target.checked; drawBoard(); });
   $$('[data-target]', main).forEach((b) => b.addEventListener('click', () => { filter.target = b.dataset.target; render(main); }));
   $('#add', main).addEventListener('click', addJob);
 }
 
+const colScroll = {};
+export function leave() {
+  if (!mainEl) return;
+  for (const c of $$('.col', mainEl)) colScroll[c.dataset.status] = $('.col-body', c).scrollTop;
+}
+
 function visible() {
   const q = filter.q.trim().toLowerCase();
-  return tickets.filter((t) => (!filter.target || t.target === filter.target)
-    && (!q || `${t.key} ${t.title} ${t.company} ${t.location}`.toLowerCase().includes(q)));
+  return sorted(tickets.filter((t) => (!filter.target || t.target === filter.target)
+    && (!q || `${t.key} ${t.title} ${t.company} ${t.location}`.toLowerCase().includes(q))));
 }
 
 function card(t) {
@@ -106,6 +169,7 @@ async function moveMenu(key) {
   });
   if (status) doMove(key, status);
 }
+
 
 async function addJob() {
   const out = await modal({
