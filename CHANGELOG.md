@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Company boards from a web search: once a day the search skill web-searches the Greenhouse, Lever, Ashby,
+  Personio, Recruitee and SmartRecruiters hosts with your search word; `hunt discover add <url…> | --file` checks
+  each board against its API and adds the ones with postings to the plan (`hunt discover due` says whether today's
+  search is still to do). EU boards (`job-boards.eu.greenhouse.io`, `jobs.eu.lever.co`) are read too.
+- A search reads every company with a known board (4 at a time); the 30-company cap is only for guessing boards.
+  A plan keeps up to 200 companies, one per board.
 - Find jobs: "Jobs posted in the last …" picker on each search (day, 3 days, week, 2 weeks, month, 2 months).
   Widening it brings back ads that an earlier search dropped only as too old.
 - A date-only "posted" (Arbeitsagentur, EURES) counts as a calendar day: a 1-day search keeps yesterday's ads

@@ -28,5 +28,12 @@ boards; write a specific one when a board needs special handling.
 function, and a test with a recorded answer in `test/search.test.js`. Never send the user's personal data to a job
 board: only search words, place and filters.
 
+**Company career boards** (the `ats` collector) are not registry entries: they are `plan.companies` entries with
+`ats` and `slug`. The endpoints are `ATS` in `lib/collectors.js` (`greenhouse`, `lever`, `lever_eu`, `ashby`,
+`smartrecruiters`, `personio`, `recruitee`), and `URL_PATTERNS` turns a board URL into `{ ats, slug }`. EU hosts:
+`job-boards.eu.greenhouse.io` is served by the normal Greenhouse API, `jobs.eu.lever.co` only by `api.eu.lever.co`
+(`lever_eu`). A new kind needs an `ATS` endpoint, a `parseAts` case, a URL pattern and a test in
+`test/discover.test.js`; `hunt discover add <url>` then adds such boards.
+
 Users can also add boards for themselves (the AI does it during `plan-search`): they go to
 `workspace/boards.custom.json` and are never committed.

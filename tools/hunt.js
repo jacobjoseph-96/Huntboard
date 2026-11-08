@@ -54,6 +54,9 @@ Job search
   boards list|suggest [--target t1]|validate|add <file.json>   job board registry; suggest ranks boards for a search
   plan show [--target t1] | plan set <file.json> --target t1 | plan board <t1> <board> on|off
   search run --target t1                 search the API boards of the plan, filter, read the ads
+  discover due [--target t1]             is today's search of the company job hosts still to do?
+  discover add <url...> | --file f [--target t1] [--dry-run]   company boards found by a web search
+                                         (Greenhouse, Lever, Ashby, ...): checked, then added to the plan
   ingest <file.json> --target t1 --source <board>   add jobs you found with the browser
   candidates [--target t1] [--json] | candidates show <key> | candidates skip <key...> --reason ".."
 
@@ -645,6 +648,29 @@ async function main() {
       const report = await search.runSearch({ targetId: opt.target, pages: Number(opt.pages) || 2, maxReads: Number(opt['max-reads']) || 80, log: (m) => console.error(m) });
       if (opt.json) return console.log(JSON.stringify(report, null, 2));
       return console.log(search.summary(report));
+    }
+
+    case 'discover': {
+      if (!['add', 'due'].includes(pos[0])) fail('Usage: hunt discover due [--target t1] | discover add <url...> | --file urls.json [--target t1] [--dry-run]');
+      const discover = require('../lib/discover');
+      if (pos[0] === 'due') {
+        const p = profileLib.loadProfile();
+        const target = p.targets.find((t) => t.id === (opt.target || '')) || p.targets.find((t) => t.active) || p.targets[0];
+        if (!target) fail('No search target yet. Add one in Settings.');
+        const d = discover.due(target.id);
+        return console.log(`${d.due ? 'due' : 'not due'}: ${d.why}`);
+      }
+      const items = [...pos.slice(1).map((u) => ({ url: u, title: '' })), ...(typeof opt.file === 'string' ? discover.readUrls(fs.readFileSync(opt.file, 'utf8')) : [])];
+      if (!items.length) fail('Give board URLs, or --file with a JSON list of URLs / {url, title}.');
+      const p = profileLib.loadProfile();
+      const target = p.targets.find((t) => t.id === (opt.target || '')) || p.targets.find((t) => t.active) || p.targets[0];
+      if (!target) fail('No search target yet. Add one in Settings.');
+      const res = await discover.addToPlan(target.id, items, { dryRun: opt['dry-run'] === true });
+      if (opt.json) return console.log(JSON.stringify(res, null, 2));
+      console.log(`${opt['dry-run'] ? '[dry run] ' : ''}${res.added.length} board(s) added to the plan of "${target.name}":`);
+      for (const a of res.added) console.log(`  + ${a.name} (${a.ats}/${a.slug}, ${a.jobs} jobs)`);
+      for (const s of res.skipped) console.log(`  - ${s.url}: ${s.reason}`);
+      return;
     }
 
     case 'ingest': {

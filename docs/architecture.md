@@ -40,8 +40,13 @@ counts as "got to interview". Every change is in the ticket's history. Notes you
 2. `hunt search run` (code) reads the API boards (`lib/collectors.js`), drops what is clearly wrong (`lib/gate.js`),
    reads the ad texts (`lib/adtext.js`, checked by `lib/validate.js`) and counts every step (`lib/funnel.js`: in =
    kept + dropped + unread).
-3. The AI searches the browser boards with `boards/playbooks/*.md` and adds results with `hunt ingest`.
-4. The AI scores every candidate (0–100, reasons, red flags) and adds the good ones as tickets.
+3. Once a day (`hunt discover due`) the AI web-searches the company job hosts (Greenhouse, Lever, Ashby, Personio,
+   Recruitee, SmartRecruiters, US and EU hosts) with the plan's search word, and passes the result URLs to
+   `hunt discover add` (`lib/discover.js`). Each URL is checked against the board's own API, which must list
+   postings; the board then joins `plan.companies` (`found: "search <date>"`, at most 200) and every later
+   `hunt search run` reads it. The search only names boards: jobs and their dates always come from the board API.
+4. The AI searches the browser boards with `boards/playbooks/*.md` and adds results with `hunt ingest`.
+5. The AI scores every candidate (0–100, reasons, red flags) and adds the good ones as tickets.
 
 ## Documents
 

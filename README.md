@@ -19,7 +19,9 @@ kind of job you want and where you live, and the AI tool you already have does t
 - **Finds jobs that fit.** It picks the right job boards for your country, field and job type (full-time,
   part-time, mini-job, seasonal, internship…), searches them, reads every ad and scores how well it fits you, with
   reasons and red flags. Want *any* side job, not only jobs in your field? Say so, and it judges what you can do
-  (hours, distance, language, licence) instead.
+  (hours, distance, language, licence) instead. Once a day it also searches the web for company career boards
+  (Greenhouse, Lever, Ashby, Personio, Recruitee, SmartRecruiters), where many companies post before the big boards
+  get the ad, and reads those boards from then on.
 - **Tracks everything as tickets** on a board: Found → To apply → Applied → Interview → Offer → Closed, with the
   full ad text, notes and history of every job.
 - **Writes your documents:** a CV in the language and style of the country you apply in, tailored to each job, cover
