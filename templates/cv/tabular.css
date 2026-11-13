@@ -9,7 +9,7 @@ body { font-family: Calibri, "Segoe UI", Arial, sans-serif; font-size: 10pt; lin
 .contact .c-item, .links .c-item, .personal .c-item, .extra .c-item { display: block; }
 .contact .sep, .links .sep, .personal .sep, .extra .sep { display: none; }
 .contact, .links, .personal, .extra { font-size: 9.6pt; }
-img.photo { width: 32mm; height: 41mm; border: .8px solid #9aa3b0; }
+img.photo { width: 32mm; height: 41mm; outline: 1px solid #9aa3b0; outline-offset: -1px; }
 
 .sec { margin-top: 4mm; }
 .sec h2 { font-size: 11pt; font-weight: 700; color: #1d2f4f; text-transform: uppercase; letter-spacing: .6px; border-bottom: 1.2px solid #1d2f4f; padding-bottom: .8mm; margin-bottom: 2mm; }

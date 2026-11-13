@@ -8,7 +8,7 @@ body { font-family: Arial, "Helvetica Neue", Helvetica, "Liberation Sans", sans-
 .headline { font-size: 11pt; font-weight: 700; margin: 1mm 0 1.2mm; }
 .contact, .links, .personal { font-size: 9pt; }
 .extra { font-size: 9pt; font-weight: 700; margin-top: .7mm; }
-img.photo { width: 27mm; height: 34mm; border: .7px solid #8a8a8a; }
+img.photo { width: 27mm; height: 34mm; outline: 1px solid #8a8a8a; outline-offset: -1px; }
 
 .sec { margin-top: 2.6mm; }
 .sec h2 { font-size: 10.3pt; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding-bottom: .5mm; margin-bottom: 1.2mm; border-bottom: .8px solid #111; }
