@@ -314,6 +314,41 @@ route('GET', '/api/documents/:id/file', (req, p, url, res) => {
 });
 route('GET', '/api/documents/:id/text', (req, p) => ({ text: documents.readText(p.id) }));
 
+// ---- CV look: designs, the photo, previews -------------------------------------------------------------
+const TEMPLATE_ID = /^[a-z0-9_-]{1,40}$/;
+route('GET', '/api/cv/templates', () => {
+  const render = require('../lib/render');
+  const photo = render.photoDoc();
+  return {
+    templates: render.templates().map((t) => ({ id: t.id, name: t.name, good_for: t.good_for, description: t.description, layout: t.layout, ats: t.ats, own: t.own })),
+    chosen: profileLib.loadProfile().cv.template,
+    default: render.DEFAULT_TEMPLATE,
+    photo: photo ? { id: photo.id, name: photo.original_name, size: photo.size } : null,
+    has_cv: Boolean(require('../lib/cv').load()),
+    own_preview: fs.existsSync(path.join(render.designDir(), 'preview.png')),
+  };
+});
+route('POST', '/api/cv/preview', async (req) => {
+  const b = await readBody(req);
+  const id = String(b.template || '');
+  const render = require('../lib/render');
+  if (!TEMPLATE_ID.test(id) || !render.templates().some((t) => t.id === id)) throw new HttpError(400, 'Choose a CV design first.');
+  try {
+    const out = render.preview(id, { dir: paths.ws('tmp'), profile: profileLib.loadProfile(), lang: b.lang || 'en' });
+    return { file: `cv_preview_${id}.pdf`, pages: out.pages, sample: out.sample };
+  } catch (err) {
+    throw new HttpError(400, err.message);
+  }
+});
+route('GET', '/api/cv/preview/:file', (req, p, url, res) => {
+  const m = String(p.file).match(/^cv_preview_([a-z0-9_-]{1,40})\.pdf$/);
+  if (!m) throw new HttpError(404, 'File not found');
+  sendFile(res, path.join(paths.ws('tmp'), `cv_preview_${m[1]}.pdf`), { name: 'CV preview.pdf' });
+});
+route('GET', '/api/cv/design/preview.png', (req, p, url, res) => {
+  sendFile(res, path.join(require('../lib/render').designDir(), 'preview.png'));
+});
+
 route('GET', '/api/inbox', () => inbox.compute().map((i) => {
   const copy = { ...i };
   delete copy._dir;

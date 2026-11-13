@@ -43,7 +43,8 @@ Open the ad (`show <KEY>` → link) with the browser tools and find how to apply
 - **The board's own form** (Easy Apply on LinkedIn, Indeed Apply, StepStone…) → channel "Easy Apply". These need the
   user to be logged in in the Huntboard browser window; if not, `hunt ask` them to log in (fully automatic: `hunt needs`).
 - **E-mail only** → `node tools/hunt.js email draft --ticket <KEY> --to <address> --subject "…" --body-file <file>`
-  with a short e-mail in the ad's language (3–5 sentences; the letter and CV are attached). Huntboard never sends
+  with a short e-mail in the ad's language (3–5 sentences; the letter and CV are attached), written by the rules
+  in `agent/skills/cover-letter/style.md` ("The same, in an e-mail"). Huntboard never sends
   e-mail: the user opens the draft and presses Send. Mark it with `hunt needs <KEY> "Send the e-mail draft in Documents"`.
 - `off` mode: stop here for every job: note the link and the route on the ticket (`hunt note`) and move on.
 

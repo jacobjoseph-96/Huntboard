@@ -1,0 +1,38 @@
+/* Classic: one column, black and white, skills on top, dates on the right, photo top right. */
+@page { size: A4; margin: 11mm 13mm 10mm; }
+body { font-family: Arial, "Helvetica Neue", Helvetica, "Liberation Sans", sans-serif; font-size: 9.3pt; line-height: 1.3; color: #111; }
+
+.head { display: flex; justify-content: space-between; align-items: flex-start; gap: 6mm; padding-bottom: 2.4mm; border-bottom: 1.3px solid #111; }
+.id { flex: 1; min-width: 0; }
+.name { font-size: 20pt; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; line-height: 1.1; }
+.headline { font-size: 11pt; font-weight: 700; margin: 1mm 0 1.2mm; }
+.contact, .links, .personal { font-size: 9pt; }
+.extra { font-size: 9pt; font-weight: 700; margin-top: .7mm; }
+img.photo { width: 27mm; height: 34mm; border: .7px solid #8a8a8a; }
+
+.sec { margin-top: 2.6mm; }
+.sec h2 { font-size: 10.3pt; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding-bottom: .5mm; margin-bottom: 1.2mm; border-bottom: .8px solid #111; }
+
+.skills { display: grid; grid-template-columns: max-content 1fr; column-gap: 5mm; row-gap: .4mm; }
+.skill { display: contents; }
+.skill .group { font-weight: 700; }
+.skill.nogroup .items { grid-column: 1 / -1; }
+
+.entry { display: grid; grid-template-columns: 1fr auto; column-gap: 5mm; margin-bottom: 1.8mm; }
+.entry:last-child { margin-bottom: 0; }
+.entry > * { grid-column: 1 / -1; }
+.entry > .line1 { grid-column: 1; }
+.entry > .when { grid-column: 2; grid-row: 1; text-align: right; font-weight: 700; }
+.title { font-weight: 700; }
+.line2 { font-weight: 700; color: #2b2b2b; font-size: 9pt; }
+.org + .where::before { content: " • "; }
+.entry ul { padding-left: 4.2mm; margin-top: .5mm; }
+.entry li { margin-bottom: .25mm; }
+.tech { font-size: 8.8pt; font-style: italic; margin-top: .3mm; }
+.tech b { font-weight: 400; }
+.grade, .recognition, .note { font-size: 9pt; }
+.lang b { font-weight: 700; }
+.other .o-line { margin-bottom: .3mm; }
+.quote { font-style: italic; }
+.foot { margin-top: 4mm; font-size: 8.4pt; color: #444; }
+.foot .privacy { font-size: 7.6pt; margin-top: 1mm; }

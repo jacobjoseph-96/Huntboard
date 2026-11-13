@@ -90,6 +90,8 @@ export async function api(method, path, body) {
 }
 export const fileUrl = (key, rel, download) => `/api/tickets/${encodeURIComponent(key)}/file?path=${encodeURIComponent(rel)}${download ? '&download=1' : ''}&token=${encodeURIComponent(TOKEN)}`;
 export const docUrl = (id) => `/api/documents/${encodeURIComponent(id)}/file?token=${encodeURIComponent(TOKEN)}`;
+// Any API file address the browser opens itself (an <img>, a new tab): it cannot send the token header.
+export const tokenUrl = (p) => `${p}${p.includes('?') ? '&' : '?'}token=${encodeURIComponent(TOKEN)}`;
 export const exportUrl = () => `/api/export.xlsx?token=${encodeURIComponent(TOKEN)}`;
 
 export async function refreshState() {

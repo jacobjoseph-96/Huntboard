@@ -20,13 +20,17 @@ certificate must come from the user's CV, documents, profile or notes on the tic
      "summary": "2–3 sentences that connect the user's real strengths to this job",
      "skills": [{ "group": "…", "items": ["the user's own skills, the ones the ad asks for first"] }],
      "experience": [{ "company": "exact company name from the CV", "bullets": ["reworded real bullets, most relevant first, 2–4 per job"] }],
-     "order": ["company names in the order to show, most relevant first (optional)"],
      "hide_sections": ["references"] }
    ```
+   The jobs themselves always print **newest first**; their order cannot be changed. Relevance is shown inside a
+   job: put its most relevant bullets first. Everything you leave out of this file stays as in the user's CV
+   (languages, education, certificates, the header lines).
    If the ad's language differs from the structured CV's language, instead write a complete translated and tailored
    CV to `<ticket folder>/docs/cv_<lang>.json` (same format as `cv show`) and render with `--cv` (no `--overrides`).
 5. Fact check: `node tools/hunt.js factcheck <your json> --ticket <KEY>`. Fix every item it lists.
 6. Render: `node tools/hunt.js cv render --ticket <KEY> --lang <lang> --overrides <workspace>/tmp/<KEY>_cv.json`
    (or `--cv <file>`), plus `--photo yes` / `--birth-date` / `--nationality` only where the country expects it.
+   The design and the photo follow the user's own choice on the Profile page (`cv.template`, `cv.photo`; "always"
+   and "never" win over `--photo`). Pass `--template <id>` only when the user asks for another design for this job.
    Keep it to one page for entry-level and side jobs, two pages at most otherwise; shorten and render again if needed.
 7. Tell the user in two lines what you emphasised and where the PDF is (the ticket's Documents tab).

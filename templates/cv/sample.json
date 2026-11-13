@@ -1,0 +1,42 @@
+{
+  "_comment": "A made-up person (Alex Doe, see examples/alex-doe). Used for the template pictures and for previews before the user has a CV.",
+  "name": "Alex Doe",
+  "headline": "Waiter and barista",
+  "summary": "Friendly and reliable service worker with three seasons of experience in hotels and cafés on the Adriatic coast. Studying software development part-time.",
+  "contact": {
+    "email": "alex.doe@example.com",
+    "phone": "+39 000 000 0000",
+    "address": "Via Esempio 1, 47921 Rimini, Italy",
+    "city": "Rimini",
+    "country": "Italy",
+    "links": ["example.com/alex-doe"],
+    "extra": ["Available from May", "Open to seasonal work"]
+  },
+  "experience": [
+    { "title": "Waiter", "company": "Hotel Esempio", "location": "Riccione, Italy", "start": "2024-05", "end": "2024-09",
+      "bullets": ["Served breakfast and dinner for up to 120 guests.", "Took orders in Italian, English and German."] },
+    { "title": "Barista", "company": "Caffè Demo", "location": "Rimini, Italy", "start": "2023-06", "end": "2023-09",
+      "bullets": ["Prepared espresso drinks and handled the till."] },
+    { "title": "Warehouse assistant (mini-job)", "company": "Demo Logistics GmbH", "location": "Hamburg, Germany", "start": "2021-10", "end": "2023-03",
+      "bullets": ["Picking and packing, 10 hours per week."], "tech": "Hand scanner · Excel" }
+  ],
+  "education": [
+    { "degree": "Software development course (part-time)", "school": "Example Academy", "location": "online", "start": "2024", "end": "present" },
+    { "degree": "Diploma di maturità (high school)", "school": "Liceo Esempio", "location": "Rimini", "end": "2021", "grade": "85/100" }
+  ],
+  "certificates": [
+    { "name": "HACCP food hygiene certificate", "issuer": "Example Training Srl", "date": "2024" },
+    { "name": "German B1 (Goethe-Zertifikat)", "date": "2022" }
+  ],
+  "languages": [
+    { "name": "Italian", "level": "native" },
+    { "name": "English", "level": "C1" },
+    { "name": "German", "level": "B1" }
+  ],
+  "skills": [
+    { "group": "Service", "items": ["Customer service", "cash handling", "coffee machines"] },
+    { "group": "Computer", "items": ["Excel", "basic Python"] }
+  ],
+  "references": [],
+  "other": []
+}

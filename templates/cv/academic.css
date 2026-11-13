@@ -1,0 +1,29 @@
+/* Academic and medical: serif, quiet, education and licences first. More than one page is normal here. */
+@page { size: A4; margin: 17mm 19mm 16mm; }
+body { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 10.2pt; line-height: 1.38; color: #151515; }
+
+.head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8mm; padding-bottom: 3mm; border-bottom: .9px solid #151515; }
+.id { flex: 1; min-width: 0; }
+.name { font-size: 20pt; font-weight: 400; letter-spacing: .6px; font-variant: small-caps; line-height: 1.1; }
+.headline { font-size: 11pt; font-style: italic; margin: 1mm 0 1.8mm; }
+.contact, .links, .personal, .extra { font-size: 9.6pt; }
+img.photo { width: 28mm; height: 36mm; border: .7px solid #777; }
+
+.sec { margin-top: 4.4mm; }
+.sec h2 { font-size: 11pt; font-weight: 700; font-variant: small-caps; letter-spacing: .8px; border-bottom: .6px solid #777; padding-bottom: .6mm; margin-bottom: 1.8mm; }
+
+.entry { display: grid; grid-template-columns: 1fr auto; column-gap: 5mm; margin-bottom: 2.4mm; }
+.entry > * { grid-column: 1 / -1; }
+.entry > .line1 { grid-column: 1; }
+.entry > .when { grid-column: 2; grid-row: 1; text-align: right; font-style: italic; }
+.title { font-weight: 700; }
+.org + .where::before { content: ", "; }
+.entry ul { padding-left: 4.6mm; margin-top: .6mm; }
+.entry li { margin-bottom: .3mm; }
+.tech, .grade, .recognition, .note { font-size: 9.6pt; }
+.skill { margin-bottom: .5mm; }
+.skill .group, .lang b { font-weight: 700; }
+.other .o-line { margin-bottom: 1mm; }
+.quote { font-style: italic; }
+.foot { margin-top: 6mm; font-size: 9pt; color: #444; }
+.foot .privacy { font-size: 7.8pt; margin-top: 1.5mm; }

@@ -173,6 +173,21 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible, a:focus-visible {
 .notice.bad { background: var(--danger-soft); }
 .notice.ok { background: var(--ok-soft); }
 
+/* ---- CV photo and design (Profile page) ---- */
+.cv-look { display: grid; grid-template-columns: 190px 1fr; gap: 20px; align-items: start; }
+.cv-photo { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.cv-photo .frame { width: 108px; height: 136px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); display: grid; place-items: center; overflow: hidden; color: var(--muted); font-size: 12px; text-align: center; }
+.cv-photo .frame img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; }
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.tpl-card { border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--panel); cursor: pointer; display: flex; flex-direction: column; gap: 6px; text-align: left; font: inherit; color: var(--ink); }
+.tpl-card:hover { border-color: var(--muted); }
+.tpl-card.on { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand-soft); }
+.tpl-card .thumb { display: block; aspect-ratio: 210 / 297; width: 100%; border: 1px solid var(--line-2); border-radius: 6px; background: #fff; object-fit: cover; object-position: top; }
+.tpl-card .thumb.none { display: grid; place-items: center; color: var(--muted); font-size: 12px; padding: 8px; text-align: center; background: var(--panel-2); }
+.tpl-card .t-name { font-weight: 700; }
+.tpl-card .t-for { font-size: 12px; color: var(--muted); line-height: 1.3; }
+@media (max-width: 700px) { .cv-look { grid-template-columns: 1fr; } }
+
 /* ---- tabs ---- */
 .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 14px; overflow-x: auto; }
 .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap; }
@@ -201,7 +216,11 @@ input:focus, select:focus, textarea:focus, .btn:focus-visible, a:focus-visible {
 
 /* ---- ticket ---- */
 .ticket-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
-@media (max-width: 980px) { .ticket-layout { grid-template-columns: 1fr; } .shell { grid-template-columns: 64px 1fr; } .brand span, .nav a, .navhist span { font-size: 0; } .navhist { flex-direction: column; } .nav a .ico { font-size: 16px; } .nav .pill { display: none; } }
+@media (max-width: 980px) { .ticket-layout { grid-template-columns: 1fr; } .shell { grid-template-columns: 64px 1fr; } .brand span, .nav a { font-size: 0; } .nav a .ico { font-size: 16px; } .nav .pill { display: none; }
+  /* Narrow sidebar: Back and Forward become two icon rows that line up with the menu icons below them. */
+  .navhist { flex-direction: column; gap: 2px; padding: 0 0 4px; } .navhist .lbl { display: none; }
+  .navhist .btn { flex: none; justify-content: flex-start; gap: 0; padding: 8px 10px; border-radius: 8px; }
+  .navhist .ico { width: 18px; text-align: center; font-size: 16px; line-height: 1.3; } }
 .fields dt { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-top: 10px; }
 .fields dd { margin: 2px 0 0; word-break: break-word; }
 .history { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }

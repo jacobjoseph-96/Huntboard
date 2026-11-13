@@ -62,6 +62,7 @@ Use the matching skill and follow its steps exactly. If your tool cannot load sk
 | `apply` | Applies to the jobs in "To apply" as far as the user's applying mode allows (prepare only, fill forms, apply after one OK, or fully automatic) - tailored CV, cover letter, attachments, the application form or e-mail, and a record of what was sent. |
 | `cover-letter` | Writes a one-page cover letter for one job on the board, in the job's language and the country's style, from the user's real experience. |
 | `cv` | Makes the user's general CV as a one-page PDF in the language and style of the country they apply in, from the structured CV. |
+| `cv-design` | Copies the look of the user's own CV (columns, colours, fonts, photo, order of the sections) into a design that every CV Huntboard makes for them then uses. |
 | `follow-up` | Writes a short, polite follow-up for an application with no answer, in the job's language, as an e-mail draft or a message to copy. |
 | `interview-debrief` | After an interview, records the questions that were asked, writes better answers, drafts the thank-you message and prepares the next round. |
 | `interview-prep` | Prepares the user for the next interview round of one job, tailored to the interview step (recruiter call, HR screen, technical, assignment, trial shift, panel, final, offer), the job ad, the documents that were sent and earlier rounds. |

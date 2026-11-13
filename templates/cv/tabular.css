@@ -1,0 +1,34 @@
+/* Tabular: the German-style table CV. Dates in the left column, photo top right, place and date at the end. */
+@page { size: A4; margin: 14mm 16mm 13mm; }
+body { font-family: Calibri, "Segoe UI", Arial, sans-serif; font-size: 10pt; line-height: 1.34; color: #1c1c1c; }
+
+.head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8mm; margin-bottom: 3mm; }
+.id { flex: 1; min-width: 0; }
+.name { font-size: 21pt; font-weight: 700; color: #1d2f4f; line-height: 1.1; }
+.headline { font-size: 11.5pt; color: #3a4658; margin: 1mm 0 2.4mm; }
+.contact .c-item, .links .c-item, .personal .c-item, .extra .c-item { display: block; }
+.contact .sep, .links .sep, .personal .sep, .extra .sep { display: none; }
+.contact, .links, .personal, .extra { font-size: 9.6pt; }
+img.photo { width: 32mm; height: 41mm; border: .8px solid #9aa3b0; }
+
+.sec { margin-top: 4mm; }
+.sec h2 { font-size: 11pt; font-weight: 700; color: #1d2f4f; text-transform: uppercase; letter-spacing: .6px; border-bottom: 1.2px solid #1d2f4f; padding-bottom: .8mm; margin-bottom: 2mm; }
+
+.entry { display: grid; grid-template-columns: 37mm 1fr; column-gap: 4mm; margin-bottom: 2.4mm; }
+.entry > * { grid-column: 2; }
+.entry > .when { grid-column: 1; grid-row: 1; color: #3a4658; }
+.title { font-weight: 700; }
+.org + .where::before { content: ", "; }
+.entry ul { padding-left: 4.4mm; margin-top: .6mm; }
+.entry li { margin-bottom: .3mm; }
+.tech, .grade, .recognition, .note { font-size: 9.2pt; color: #4a5361; }
+
+.skills { display: grid; grid-template-columns: 37mm 1fr; column-gap: 4mm; row-gap: .8mm; }
+.skill { display: contents; }
+.skill .group { color: #3a4658; }
+.skill.nogroup .items { grid-column: 2; }
+.summary, .langs, .other, .refs { padding-left: 41mm; }
+.lang b { font-weight: 700; }
+.quote { font-style: italic; }
+.foot { margin-top: 7mm; font-size: 9.6pt; }
+.foot .privacy { font-size: 7.8pt; margin-top: 2mm; color: #4a5361; }

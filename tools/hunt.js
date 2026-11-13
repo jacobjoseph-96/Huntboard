@@ -23,7 +23,9 @@ Profile and documents
   docs add <file> --type <type> [--title ..] [--issuer ..] [--date ..]
   docs extract [<id>]                    (re)extract text
   cv show [--json] | cv set <file.json>  structured CV used for all documents
-  cv render [--ticket KEY] [--overrides f.json] [--lang it] [--photo yes] [--birth-date] [--nationality] [--references]
+  cv render [--ticket KEY] [--overrides f.json] [--lang it] [--template id] [--photo yes] [--birth-date] [--nationality] [--references]
+  cv templates [--json]                  the CV designs (the user's choice is in the profile: cv.template)
+  cv design init --from <id> | cv design check   the user's own design (workspace/profile/cv_design/)
   letter render <letter.json> --ticket KEY [--lang it]
   attachments build --ticket KEY [--docs id,id]   one PDF with certificates/references
   factcheck <file.json> [--ticket KEY]   every number/level/acronym must be in the user's data
@@ -350,6 +352,40 @@ async function main() {
     }
 
     case 'cv': {
+      if (pos[0] === 'templates') {
+        const render = require('../lib/render');
+        const list = render.templates();
+        if (opt.json) return console.log(JSON.stringify(list, null, 2));
+        const chosen = profileLib.loadProfile().cv.template;
+        for (const t of list) {
+          console.log(`${t.id}${t.id === chosen ? ' (chosen)' : ''} | ${t.name} | ${t.layout === 'sidebar' ? 'two columns' : 'one column'} | online forms: ${t.ats === 'safe' ? 'read it well' : 'may read it out of order'} | ${t.good_for}`);
+        }
+        if (!list.some((t) => t.own)) console.log('own | not made yet: the "cv-design" skill copies the look of the user\'s own CV');
+        return;
+      }
+      if (pos[0] === 'design') {
+        const render = require('../lib/render');
+        if (pos[1] === 'init') {
+          let dir;
+          try {
+            dir = render.initDesign(opt.from || render.DEFAULT_TEMPLATE);
+          } catch (err) {
+            fail(err.message);
+          }
+          return console.log(`Own design started from "${opt.from || render.DEFAULT_TEMPLATE}" in ${paths.rel(dir)}: edit design.css and design.json there, then run "hunt cv design check".`);
+        }
+        if (pos[1] === 'check') {
+          if (!render.ownDesign()) fail('There is no own design yet. Run: node tools/hunt.js cv design init --from <template id>');
+          let out;
+          try {
+            out = render.preview(render.OWN, { dir: render.designDir(), name: 'preview', profile: profileLib.loadProfile(), lang: opt.lang || 'en', png: true });
+          } catch (err) {
+            fail(err.message);
+          }
+          return console.log(`Preview: ${paths.rel(out.pdf)}\nPicture of page 1: ${paths.rel(out.png)}\nPages: ${out.pages}${out.sample ? '\n(Shown with the sample person: there is no structured CV yet.)' : ''}`);
+        }
+        fail('Usage: hunt cv design init --from <template id> | hunt cv design check [--lang en]');
+      }
       if (pos[0] === 'render') {
         const render = require('../lib/render');
         // --cv: a full CV in another language (same format as cv.json), e.g. docs/cv_it.json.
@@ -361,13 +397,24 @@ async function main() {
         const t = opt.ticket ? store.mustGet(opt.ticket) : null;
         const merged = render.merge(cv, opt.overrides ? readJsonFile(opt.overrides) : {});
         const lang = opt.lang || 'en';
-        const extras = { birth_date: Boolean(opt['birth-date']), nationality: Boolean(opt.nationality), work_permit: opt['work-permit'] !== 'no', availability: opt.availability || p.applying.answers.availability || '', references: Boolean(opt.references), privacy: opt.privacy !== 'no' };
-        const html = render.cvHtml(merged, p, { lang, photo: opt.photo === 'yes' ? render.photoData() : null, extras });
+        // The look: the user's chosen template, unless this call names one.
+        if (opt.template && opt.template !== true && !render.templates().some((x) => x.id === opt.template)) {
+          fail(`No template "${opt.template}". Choose one of: ${render.templates().map((x) => x.id).join(', ')}.`);
+        }
+        let tpl;
+        try {
+          tpl = render.template(opt.template && opt.template !== true ? opt.template : p.cv.template);
+        } catch (err) {
+          fail(err.message);
+        }
+        const wantPhoto = render.wantsPhoto(p, opt.photo);
+        const photo = wantPhoto ? render.photoData() : null;
+        const html = render.cvHtml(merged, p, { lang, photo, extras: render.defaultExtras(p, opt), template: tpl });
         const dir = t ? path.join(t._dir, 'docs') : paths.profileDir();
         const file = path.join(dir, `CV_${render.fileBase(merged.name || p.person.name)}_${render.locale(lang).code}.html`);
         const out = render.writeAndPrint(file, html);
         if (t) store.setFields(t.key, { documents: { cv: path.relative(t._dir, out.pdf).split(path.sep).join('/') } }, { by: 'agent' });
-        return console.log(`CV: ${paths.rel(out.pdf)}\nPages: ${out.pages}${out.pages > 1 ? '  (more than one page: shorten it, e.g. fewer bullets or merge old jobs)' : ''}`);
+        return console.log(`CV: ${paths.rel(out.pdf)}\nPages: ${out.pages}${out.pages > 1 ? '  (more than one page: shorten it, e.g. fewer bullets or merge old jobs)' : ''}\nTemplate: ${tpl.id} | Photo: ${photo ? 'yes' : wantPhoto ? 'no (no photo uploaded: the user adds one on the Profile page)' : 'no'}`);
       }
       if (pos[0] === 'set') {
         cvLib.save(readJsonFile(pos[1]));

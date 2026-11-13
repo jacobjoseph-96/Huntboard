@@ -1,0 +1,67 @@
+{
+  "_comment": "The ready-made CV designs. layout: 'single' (one column) or 'sidebar' (left column + main). sections: order in the main column. side: sections in the left column (sidebar layout only; 'contact' is the contact block). footer: print the place/date/name line. ats: how well online application forms read it. See README.md in this folder for the HTML the stylesheets style.",
+  "default": "classic",
+  "templates": [
+    {
+      "id": "classic",
+      "name": "Classic",
+      "good_for": "Software, IT, engineering and any online application form",
+      "description": "One column, black and white, skills on top, dates on the right, photo top right. The safest choice for application portals.",
+      "layout": "single",
+      "sections": ["profile", "skills", "experience", "education", "certificates", "languages", "references", "other"],
+      "footer": false,
+      "ats": "safe"
+    },
+    {
+      "id": "modern",
+      "name": "Modern",
+      "good_for": "Office, service and customer-facing jobs",
+      "description": "One column with a soft grey header and blue headings.",
+      "layout": "single",
+      "sections": ["profile", "experience", "education", "certificates", "languages", "skills", "references", "other"],
+      "footer": true,
+      "ats": "safe"
+    },
+    {
+      "id": "sidebar",
+      "name": "Sidebar",
+      "good_for": "A CV you send to a person by e-mail",
+      "description": "Dark header and a left column for contact, skills and languages. Looks good to a reader, but online application forms may read it out of order.",
+      "layout": "sidebar",
+      "side": ["contact", "skills", "languages", "certificates"],
+      "sections": ["profile", "experience", "education", "references", "other"],
+      "footer": false,
+      "ats": "weak"
+    },
+    {
+      "id": "tabular",
+      "name": "Tabular (German style)",
+      "good_for": "Germany, Austria, Switzerland: traditional employers, public sector, trades and technicians",
+      "description": "The tabular Lebenslauf: dates in the left column, photo top right, place and date at the end.",
+      "layout": "single",
+      "sections": ["profile", "experience", "education", "certificates", "skills", "languages", "references", "other"],
+      "footer": true,
+      "ats": "safe"
+    },
+    {
+      "id": "academic",
+      "name": "Academic and medical",
+      "good_for": "Doctors, researchers, teachers",
+      "description": "Serif and conservative: education and licences first, room for publications, more than one page is fine.",
+      "layout": "single",
+      "sections": ["profile", "education", "certificates", "experience", "skills", "languages", "other", "references"],
+      "footer": false,
+      "ats": "safe"
+    },
+    {
+      "id": "creative",
+      "name": "Creative",
+      "good_for": "Design, art, media",
+      "description": "One accent colour, a large name and your portfolio link right under it. Still one column of real text, so forms can read it.",
+      "layout": "single",
+      "sections": ["profile", "experience", "skills", "education", "certificates", "languages", "references", "other"],
+      "footer": false,
+      "ats": "safe"
+    }
+  ]
+}

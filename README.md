@@ -25,7 +25,8 @@ kind of job you want and where you live, and the AI tool you already have does t
 - **Tracks everything as tickets** on a board: Found → To apply → Applied → Interview → Offer → Closed, with the
   full ad text, notes and history of every job.
 - **Writes your documents:** a CV in the language and style of the country you apply in, tailored to each job, cover
-  letters, an attachments PDF and e-mail drafts, all checked against your real data.
+  letters, an attachments PDF and e-mail drafts, all checked against your real data. You choose the CV's design
+  (six ready-made ones, or the look of your own CV) and add your photo on the Profile page.
 - **Applies, as far as you allow:** prepare only · fill in the forms for you to submit · apply after you OK the list ·
   **fully automatic** while you are away: it decides for you from your profile, writes every decision down and leaves
   only what truly needs you (robot checks, logins) on a "Needs you" list.

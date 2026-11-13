@@ -20,9 +20,9 @@ Follow `AGENTS.md` (never invent facts; change data only with `node tools/hunt.j
    ```json
    {
      "name": "", "headline": "", "summary": "",
-     "contact": { "email": "", "phone": "", "address": "", "city": "", "country": "", "links": [] },
-     "experience": [{ "title": "", "company": "", "location": "", "start": "YYYY-MM", "end": "YYYY-MM or present", "bullets": [] }],
-     "education": [{ "degree": "", "school": "", "location": "", "start": "", "end": "", "grade": "", "document_id": "" }],
+     "contact": { "email": "", "phone": "", "address": "", "city": "", "country": "", "links": [], "extra": [] },
+     "experience": [{ "title": "", "company": "", "location": "", "start": "YYYY-MM", "end": "YYYY-MM or present", "bullets": [], "tech": "" }],
+     "education": [{ "degree": "", "school": "", "location": "", "start": "", "end": "", "grade": "", "recognition": "", "note": "", "document_id": "" }],
      "certificates": [{ "name": "", "issuer": "", "date": "", "document_id": "" }],
      "languages": [{ "name": "", "level": "" }],
      "skills": [{ "group": "", "items": [] }],
@@ -32,6 +32,13 @@ Follow `AGENTS.md` (never invent facts; change data only with `node tools/hunt.j
    ```
    `document_id` links an entry to the uploaded document that proves it. `quote` is a short, exact sentence from a
    reference letter.
+   - `languages`: every entry needs `name` and `level`, each exactly as the CV states it ("English", "C1"). The CV
+     prints them as "English: C1".
+   - `contact.extra`: short lines the CV has next to the contact details ("Available immediately", "Open to relocation").
+   - `tech`: the tools or technologies line of a job, if the CV has one.
+   - `recognition`: an official recognition of that degree (ZAB Zeugnisbewertung, anabin, ENIC-NARIC...). It belongs
+     to the degree and prints under it; it is not a certificate. `note`: one more line under the degree (main subjects).
+   - List jobs and education in any order: every CV prints them newest first.
 5. Write `<workspace>/tmp/profile_patch.json` and apply it with
    `node tools/hunt.js profile patch <workspace>/tmp/profile_patch.json --only-empty`:
    - `person`: name, email, phone, address, city, country, links: only what the CV states.

@@ -54,6 +54,11 @@ The AI writes JSON only (`cv.json`, per-job changes, letter JSON); `lib/render.j
 labels and date formats of `templates/locales.json`. `hunt factcheck` lists every number, level or acronym that is
 not in your data.
 
+A CV's look is a design: one entry in `templates/cv/templates.json` plus a stylesheet, or the user's own design in
+`workspace/profile/cv_design/` (made by the `cv-design` skill from the CV they uploaded). The HTML is the same for
+every design; `templates/cv/README.md` is its contract. The chosen design and the photo rule live in the profile
+(`cv.template`, `cv.photo`); the photo is the newest document of type `photo`, shrunk on upload (`lib/photo.js`).
+
 ## Applying modes
 
 `off` (prepare only) · `assist` (fill in, you submit) · `auto` (submit after one OK per run) · `full_auto` (search and

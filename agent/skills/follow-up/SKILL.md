@@ -13,6 +13,8 @@ Follow `AGENTS.md`.
    (`hunt move <KEY> closed --resolution expired`) and say so.
 3. Write 3–5 sentences in the ad's language: the job and the date applied, that the user is still interested (one
    concrete reason), a polite question about the status and timeline, thanks. No pressure, no new claims.
+   The rules of `agent/skills/cover-letter/style.md` hold here too: no stock opening, nothing that would fit any
+   company, no labels like "motivated".
 4. If an e-mail address is known: write the text to `<workspace>/tmp/<KEY>_followup.txt` and run
    `node tools/hunt.js email draft --ticket <KEY> --to <address> --subject "<subject>" --body-file <file>`;
    otherwise put the text in your reply for the user to send through the board or portal.

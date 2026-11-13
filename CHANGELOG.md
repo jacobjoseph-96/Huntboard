@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- CV designs: six ready-made templates (Classic, Modern, Sidebar, Tabular / German style, Academic and medical,
+  Creative) and "My own design", which the new `cv-design` skill copies from the CV you uploaded. Choose one on the
+  Profile page, with a preview of your own CV; `hunt cv templates`, `cv render --template <id>`,
+  `cv design init | check`. Classic (one column, skills on top, dates on the right) is the new default.
+- CV photo: its own place on the Profile page (add, change, remove; "as usual in the country / always / never").
+  The photo sits at the top right and is made small automatically, so it does not bloat every PDF.
+- A CV always prints jobs and education newest first; tailoring can no longer reorder them.
+- Languages print as "English: C1 · German: B1". A CV file written with other key names (`title`, `language`,
+  contact details at the top level) is read correctly instead of printing half-empty lines.
+- New optional CV fields: `contact.extra` (header lines such as "Available immediately"), `experience[].tech`,
+  `education[].recognition` (a degree recognition prints under its degree, not as a certificate) and `note`.
+- The text inside a CV PDF is in reading order (title, dates, employer, details), which is what application forms read.
+- Cover letters follow one method (`agent/skills/cover-letter/style.md`): five short paragraphs, no stock opening,
+  no praise without a fact, the swap test. Application and follow-up e-mails use the same rules.
+  No "Enclosures: CV" line any more.
+- Back / Forward buttons line up with the menu icons when the window is narrow.
+
 - Company boards from a web search: once a day the search skill web-searches the Greenhouse, Lever, Ashby,
   Personio, Recruitee and SmartRecruiters hosts with your search word; `hunt discover add <url…> | --file` checks
   each board against its API and adds the ones with postings to the plan (`hunt discover due` says whether today's

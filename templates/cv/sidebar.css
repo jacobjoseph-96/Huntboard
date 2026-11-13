@@ -1,0 +1,43 @@
+/* Sidebar: dark header, a left column for contact, skills and languages, the story on the right.
+   The left column's colour is painted on the page itself, so it runs to the bottom of every page. */
+@page { size: A4; margin: 0; }
+html { background: linear-gradient(to right, #f1f3f5 0, #f1f3f5 68mm, #fff 68mm); }
+body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 9.2pt; line-height: 1.36; color: #23272c; }
+
+.head { background: #3a424d; color: #fff; padding: 9mm 9mm 8mm; display: flex; justify-content: space-between; align-items: center; gap: 8mm; }
+.name { font-size: 23pt; font-weight: 700; line-height: 1.1; }
+.headline { font-size: 11pt; margin-top: 1.4mm; color: #e3e7ec; }
+img.photo { width: 27mm; height: 27mm; border-radius: 50%; border: 2px solid #fff; }
+
+.cols { display: flex; align-items: flex-start; }
+.side { flex: 0 0 68mm; width: 68mm; padding: 5mm 5mm 6mm 6mm; }
+.body { flex: 1; min-width: 0; padding: 5mm 8mm 6mm 5mm; }
+
+.side .sec h2 { font-size: 10pt; font-weight: 700; text-align: center; background: #fff; border: 1px solid #c7ccd3; border-radius: 12px; padding: 1.2mm 2mm; margin: 3.5mm 0 2mm; }
+.side .sec:first-child h2 { margin-top: 0; }
+.body .sec h2 { font-size: 10.4pt; font-weight: 700; color: #fff; background: #4a535f; border-radius: 3px; padding: 1.2mm 3mm; margin: 3.5mm 0 2mm; }
+.body .sec:first-child h2 { margin-top: 0; }
+
+.side .c-item, .side .lang, .side .skill { display: block; margin-bottom: 1.2mm; }
+.side .sep { display: none; }
+.side .skill .group { display: block; font-weight: 700; }
+.side .skill .colon { display: none; }
+.side .lang b { font-weight: 700; }
+.side .entry { margin-bottom: 1.6mm; }
+.side .when { font-size: 8.4pt; color: #6b7280; }
+
+.entry { display: flex; flex-direction: column; margin-bottom: 2.6mm; }
+.entry > .line2 { order: -3; }
+.entry > .when { order: -2; }
+.entry > .line1 { order: -1; }
+.body .when { font-size: 8.6pt; color: #7a828d; }
+.body .line2 { font-weight: 700; font-size: 9.8pt; }
+.body .line2 .where { font-weight: 400; font-size: 8.8pt; color: #7a828d; }
+.side .entry > * { order: 0; }
+.org + .where::before { content: " · "; }
+.entry ul { padding-left: 4.4mm; margin-top: .6mm; }
+.entry li { margin-bottom: .4mm; }
+.tech, .grade, .recognition, .note { font-size: 8.5pt; color: #5b6472; }
+.quote { font-style: italic; }
+.foot { padding: 0 8mm 6mm 73mm; font-size: 8.2pt; color: #6b7280; }
+.foot .privacy { font-size: 7.6pt; margin-top: 1mm; }
