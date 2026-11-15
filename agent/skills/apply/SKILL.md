@@ -32,7 +32,9 @@ say for that job, also where this file says otherwise (e.g. "it is fine to delet
 A ticket that was "Needs you" and now has instructions answering it is yours again.
 
 ## 2. Documents (for each job)
-1. Tailored CV: follow the `tailor` skill (skip if `docs/` already has a CV made for this job).
+1. CV: if the profile says `CV to send: the user's own CV as uploaded` (`applying.cv_choice: original`), or the
+   ticket's instructions say to send the CV unchanged, run `node tools/hunt.js cv use-original --ticket <KEY>` and
+   do not tailor. Otherwise follow the `tailor` skill (skip if `docs/` already has a CV made for this job).
 2. Cover letter: follow the `cover-letter` skill when the job or the country expects one, or the form has a field.
 3. Attachments: `node tools/hunt.js attachments build --ticket <KEY>` (it follows the user's setting and the
    country's custom; never adds documents marked sensitive).
@@ -42,9 +44,9 @@ Open the ad (`show <KEY>` → link) with the browser tools and find how to apply
 - **Company site or applicant system** (Workday, Greenhouse, Lever, Personio, SmartRecruiters…) → channel "Company site".
 - **The board's own form** (Easy Apply on LinkedIn, Indeed Apply, StepStone…) → channel "Easy Apply". These need the
   user to be logged in in the Huntboard browser window; if not, `hunt ask` them to log in (fully automatic: `hunt needs`).
-- **E-mail only** → `node tools/hunt.js email draft --ticket <KEY> --to <address> --subject "…" --body-file <file>`
-  with a short e-mail in the ad's language (3–5 sentences; the letter and CV are attached), written by the rules
-  in `agent/skills/cover-letter/style.md` ("The same, in an e-mail"). Huntboard never sends
+- **E-mail only** → follow the `email` skill: a short e-mail in the ad's language (3–5 sentences; the letter and
+  CV are attached), checked with `hunt factcheck`, saved with `node tools/hunt.js email draft --ticket <KEY> --to
+  <address> --subject "…" --body-file <file>`. Huntboard never sends
   e-mail: the user opens the draft and presses Send. Mark it with `hunt needs <KEY> "Send the e-mail draft in Documents"`.
 - `off` mode: stop here for every job: note the link and the route on the ticket (`hunt note`) and move on.
 

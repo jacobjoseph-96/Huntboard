@@ -5,6 +5,7 @@ report says LinkedIn is limiting requests.
 
 **Search list** (an HTML fragment with 10 jobs; next page `&start=10`, `&start=20`…), no login needed:
 `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=<search word>&location=<city>%2C%20<country>&distance=<miles: km × 0.62>&f_TPR=r<days × 86400>&start=0`
+- one search per place of the plan; for a region use its English name (e.g. `Saxony%2C%20Germany`) and leave out `&distance`.
 - job types: add `&f_JT=F` (full-time), `P` (part-time), `C` (contract), `T` (temporary), `I` (internship), e.g. `&f_JT=P%2CT`.
 - remote only: `&f_WT=2`.
 

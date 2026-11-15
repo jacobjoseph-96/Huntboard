@@ -27,6 +27,14 @@
 | `runs/` | every AI run: prompt, raw output, steps |
 | `browser-profile/` | the logins of the AI's browser window |
 
+## Updates and data migrations
+
+`lib/update.js` updates the program files: `git pull --ff-only` for a clone, or the branch archive from GitHub
+(read by `lib/tar.js`) copied over the program files for a downloaded copy. `workspace/`, `.env`, `.git` and
+`node_modules` are never written; `workspace/backups/<time>/` gets a copy of the data first. Then `npm install` and
+`lib/migrate.js`, whose one-time migrations are recorded in `workspace/data/migrations.json` (they also run at every
+start). The server restarts itself: `start.bat` / `start.sh` start it again on exit code 75.
+
 ## Tickets
 
 Status: **Found → To apply → Applied → Interview → Offer → Closed** (closed with a resolution: accepted, rejected,

@@ -6,8 +6,9 @@ Plain web requests are blocked by Indeed, so use the browser tools. Read data wi
 `ch.indeed.com`, `pl.indeed.com`, `in.indeed.com`, `ca.indeed.com`, `au.indeed.com`, `uk.indeed.com` (United Kingdom),
 `www.indeed.com` (United States).
 
-**Search** (one per search word; next page: add `&start=10`, `&start=20`…):
-`https://<site>/jobs?q=<search word>&l=<city>&radius=<km>&fromage=<days: 1, 3, 7 or 14>`
+**Search** (one per search word and place of the plan; next page: add `&start=10`, `&start=20`…):
+`https://<site>/jobs?q=<search word>&l=<city or region>&radius=<km>&fromage=<days: 1, 3, 7 or 14>` (for a region such
+as "Sachsen" leave out `&radius`)
 - part-time only: add `&sc=0kf%3Ajt(parttime)%3B` · remote: add `&remotejob=032b3046-06a3-4876-8dfd-474eb5e7ed11`
   (if a filter does not work on a country site, leave it out and filter the cards yourself).
 

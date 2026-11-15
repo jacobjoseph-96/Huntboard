@@ -43,6 +43,13 @@ const TYPES = {
 
 for (const d of [paths.applications(), paths.asksDir(), paths.profileDir(), paths.documentsDir(), paths.runsDir()]) ensureDir(d);
 
+// One-time changes a new version makes to the user's data (lib/migrate.js); safe to run on every start.
+try {
+  require('../lib/migrate').runAll({ log: (m) => console.log(`Update of your data: ${m}`) });
+} catch (err) {
+  console.error(`Could not update the data for this version: ${err.message}`);
+}
+
 // ---- live updates (server-sent events) ------------------------------------------------------
 const clients = new Set();
 function broadcast(event, data = {}) {
@@ -182,6 +189,9 @@ route('GET', '/api/meta', () => ({
   doc_types: documents.DOC_TYPES.map(([id, label, sensitive]) => ({ id, label, sensitive })),
   skills: availableSkills(),
   tasks: prompts.TASKS,
+  // For the Clear buttons in Settings: what a fresh install has.
+  defaults: { profile: profileLib.DEFAULT_PROFILE, followup_days: profileLib.DEFAULT_SETTINGS.followup_days },
+  model_tiers: { tiers: require('../lib/ai/routing').TIERS, tasks: require('../lib/ai/routing').DEFAULT_TIERS },
 }));
 
 route('GET', '/api/state', () => {
@@ -271,6 +281,12 @@ route('POST', '/api/reveal', async (req) => {
   spawn(cmd, args, { detached: true, stdio: 'ignore', windowsVerbatimArguments: process.platform === 'win32' }).unref();
   return { ok: true, path: path.resolve(file) };
 });
+// Use the user's own uploaded CV for this job, as it is (no tailoring).
+route('POST', '/api/tickets/:key/original-cv', (req, p) => {
+  require('../lib/cv').useOriginal(p.key);
+  soon('tickets');
+  return ticketView(store.mustGet(p.key));
+});
 route('POST', '/api/tickets/:key/notes', async (req, p) => ticketView(store.addNote(p.key, (await readBody(req)).text, { by: 'user' })));
 route('POST', '/api/tickets/:key/rounds', async (req, p) => {
   const t = store.addInterviewRound(p.key, await readBody(req), { by: 'user' });
@@ -287,6 +303,15 @@ route('GET', '/api/tickets/:key/file', (req, p, url, res) => {
 
 route('GET', '/api/profile', () => profileLib.loadProfile());
 route('PUT', '/api/profile', async (req) => profileLib.saveProfile(await readBody(req)));
+// Save only some parts of the profile (the sections of one Settings tab), so a save never undoes what the AI or
+// another page changed meanwhile.
+route('PATCH', '/api/profile', async (req) => {
+  const b = await readBody(req);
+  if (!b || typeof b !== 'object' || Array.isArray(b)) throw new HttpError(400, 'Send the parts of the profile to save.');
+  const p = profileLib.loadProfile();
+  for (const [k, v] of Object.entries(b)) if (k in profileLib.DEFAULT_PROFILE && k !== 'version') p[k] = v;
+  return profileLib.saveProfile(p);
+});
 route('GET', '/api/settings', () => publicSettings());
 route('PUT', '/api/settings', async (req) => {
   const b = await readBody(req);
@@ -316,6 +341,13 @@ route('GET', '/api/documents/:id/text', (req, p) => ({ text: documents.readText(
 
 // ---- CV look: designs, the photo, previews -------------------------------------------------------------
 const TEMPLATE_ID = /^[a-z0-9_-]{1,40}$/;
+// Take the photo out of the uploaded CV (PDF or Word) and make it the CV photo.
+route('POST', '/api/cv/photo-from-cv', async () => {
+  const d = await documents.photoFromCv();
+  if (!d) throw new HttpError(404, 'No photo found in your CV. Add one with "Add a photo".');
+  soon('profile');
+  return d;
+});
 route('GET', '/api/cv/templates', () => {
   const render = require('../lib/render');
   const photo = render.photoDoc();
@@ -425,6 +457,54 @@ route('GET', '/api/export.xlsx', async (req, p, url, res) => {
   await require('../lib/excel').exportXlsx(file);
   sendFile(res, file, { download: true, name: `huntboard_${new Date().toISOString().slice(0, 10)}.xlsx` });
 });
+
+// ---- updates -------------------------------------------------------------------------------------------
+// Check for a newer Huntboard and update in the background; progress goes out as "update" events. The user's data
+// stays where it is (workspace/), a backup is made first, then the app restarts itself.
+const updater = { checked: null, running: false, log: [], error: null, done: null };
+route('GET', '/api/update/check', async (req, p, url) => {
+  const fresh = url.searchParams.has('fresh');
+  if (!fresh && updater.checked && Date.now() - Date.parse(updater.checked.checked_at) < 6 * 3600000) return updater.checked;
+  try {
+    updater.checked = await require('../lib/update').check();
+  } catch (err) {
+    throw new HttpError(502, `Could not check for updates: ${err.message}`);
+  }
+  return updater.checked;
+});
+route('GET', '/api/update/status', () => ({ running: updater.running, log: updater.log, error: updater.error, done: updater.done, version: pkg.version }));
+route('POST', '/api/update/apply', () => {
+  if (updater.running) return { running: true };
+  if (runner.busy()) throw new HttpError(409, 'The AI is working right now. Wait until it is done (or stop it on the AI activity page), then update.');
+  Object.assign(updater, { running: true, log: [], error: null, done: null });
+  const log = (text) => {
+    updater.log.push(text);
+    broadcast('update', { text });
+  };
+  require('../lib/update').apply({ log }).then((res) => {
+    Object.assign(updater, { running: false, done: res, checked: null });
+    broadcast('update', { done: res });
+    log('Restarting Huntboard…');
+    setTimeout(restart, 800);
+  }).catch((err) => {
+    Object.assign(updater, { running: false, error: err.message });
+    broadcast('update', { error: err.message });
+  });
+  return { running: true };
+});
+
+// Start again with the new program files. Run by start.bat / start.sh (HUNTBOARD_SUPERVISED=1) exit code 75 asks
+// them to start the server again; otherwise a new server is started here before this one ends.
+function restart() {
+  for (const res of clients) res.end();
+  server.close(() => {
+    if (process.env.HUNTBOARD_SUPERVISED === '1') process.exit(75);
+    const args = process.argv.slice(1).filter((a) => a !== '--open');
+    spawn(process.execPath, args, { cwd: paths.ROOT, detached: true, stdio: 'ignore', env: process.env }).unref();
+    process.exit(0);
+  });
+  if (server.closeAllConnections) server.closeAllConnections();
+}
 
 // ---- server -------------------------------------------------------------------------------------------
 function hostOk(req) {

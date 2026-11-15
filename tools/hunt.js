@@ -22,21 +22,24 @@ Profile and documents
   docs text <id>                         extracted text of a document
   docs add <file> --type <type> [--title ..] [--issuer ..] [--date ..]
   docs extract [<id>]                    (re)extract text
+  docs photo-from-cv                     take the photo out of the uploaded CV (PDF or Word) as the CV photo
   cv show [--json] | cv set <file.json>  structured CV used for all documents
   cv render [--ticket KEY] [--overrides f.json] [--lang it] [--template id] [--photo yes] [--birth-date] [--nationality] [--references]
+  cv use-original --ticket KEY           send the user's own uploaded CV for this job, untouched (no tailoring)
   cv templates [--json]                  the CV designs (the user's choice is in the profile: cv.template)
   cv design init --from <id> | cv design check   the user's own design (workspace/profile/cv_design/)
   letter render <letter.json> --ticket KEY [--lang it]
   attachments build --ticket KEY [--docs id,id]   one PDF with certificates/references
-  factcheck <file.json> [--ticket KEY]   every number/level/acronym must be in the user's data
-  email draft --ticket KEY --to <addr> --subject ".." --body-file f.txt   .eml draft with the documents
+  factcheck <file.json|file.txt> [--ticket KEY]   facts must be in the user's data (a CV: not from the ad); style hints
+  email draft --ticket KEY [--to <addr>] --subject ".." --body-file f.txt   .eml draft with the documents
   sent <KEY> [--channel ..] [--confirmation ..]   freeze the documents that were sent
   pdf-md <file.md>                       Markdown to PDF (interview packs)
 
 Tickets
   list [--status <s>] [--target <id>] [--json]
   show <KEY> [--json] [--posting]
-  add <jobs.json> [--status found|to_apply]   create tickets from a JSON array (duplicates skipped)
+  add <jobs.json> [--status found|to_apply]   create tickets from a JSON array (duplicates skipped; each job needs
+                                         "link", the URL of the ad, or a "pool_key" from candidates)
   move <KEY> <status> [--resolution <r>] [--note "..."]
        statuses: ${store.STATUSES.join(', ')}; resolutions: ${store.RESOLUTIONS.join(', ')}
   interview <KEY> --stage <stage> [--at <ISO date>] [--format ..] [--interviewers "A, B"] [--language ..]
@@ -69,6 +72,7 @@ Other
   export --xlsx [file.xlsx]              all tickets as a spreadsheet
   import --xlsx <file.xlsx>              import an old job list spreadsheet
   pdf <file.html> [out.pdf]              print HTML to PDF (A4), shows the page count
+  update [--check]                       get the newest Huntboard; your data in workspace/ is kept (backup first)
 `;
 
 function fail(msg, code = 2) {
@@ -77,7 +81,23 @@ function fail(msg, code = 2) {
 }
 
 // Boolean flags that never take a value.
-const FLAGS = new Set(['json', 'posting', 'only-empty', 'hook', 'xlsx', 'all', 'done']);
+const FLAGS = new Set(['json', 'posting', 'only-empty', 'hook', 'xlsx', 'all', 'done', 'check', 'yes']);
+
+// The fact check before a document is made: a CV or letter with invented facts is not rendered.
+function factGate(generated, ticket, what) {
+  const fc = require('../lib/factcheck');
+  const problems = fc.check(generated, { ticket });
+  if (!problems.length) return;
+  fail(`The ${what} was NOT made: these are not in the user's data${fc.isCv(generated) ? ' (in a CV the job ad does not count: a skill the ad asks for is not the user\'s skill)' : ''}:
+  - ${problems.join('\n  - ')}
+Remove them, or use the user's own words. If you think the user really has it, ask (hunt ask) and, when they say yes,
+record it with: node tools/hunt.js note ${ticket || '<KEY>'} "The user confirmed: ..." , then render again.`, 1);
+}
+
+function styleLines(generated, lang) {
+  const hints = require('../lib/humanize').lint(generated, lang);
+  return hints.length ? `Style (rewrite these so it sounds like the user, not like an AI):\n  - ${hints.join('\n  - ')}` : '';
+}
 
 function parse(argv) {
   const pos = [];
@@ -302,14 +322,15 @@ async function main() {
       if (opt.json) return console.log(JSON.stringify(p, null, 2));
       const docs = documents.list();
       console.log(`Name: ${p.person.name || '-'} | Lives in: ${[p.location.city, p.location.country].filter(Boolean).join(', ') || '-'} | Radius: ${p.location.radius_km} km | Remote: ${p.location.remote} | Relocate: ${p.location.relocate ? p.location.relocate_where || 'yes' : 'no'}`);
+      console.log(`Search in: ${p.location.places.length ? p.location.places.join('; ') : `around ${p.location.city || '-'}`} (cities or regions; each is searched)`);
       console.log(`Languages: ${p.about.languages.map((l) => `${l.name} ${l.level}`.trim()).join(', ') || '-'} | Work permit: ${p.about.work_permit || '-'} | Driving licence: ${p.about.driving_licence || '-'}`);
       console.log(`Min salary: ${p.about.min_salary || '-'} | Start: ${p.about.start_date || '-'} | Avoid: ${p.about.avoid || '-'}`);
       console.log('Search targets:');
       for (const t of p.targets) {
-        console.log(`  ${t.id}${t.active ? '' : ' (off)'}: ${t.name} | types: ${t.job_types.join(', ')} | roles: ${t.roles.scope}${t.roles.titles.length ? ` (${t.roles.titles.join(', ')})` : ''}`);
+        console.log(`  ${t.id}${t.active ? '' : ' (off)'}: ${t.name} | types: ${t.job_types.join(', ')} | roles: ${t.roles.scope}${t.roles.titles.length ? ` (${t.roles.titles.join(', ')})` : ''}${t.location && t.location.places.length ? ` | search in: ${t.location.places.join('; ')}${t.location.radius_km ? ` + ${t.location.radius_km} km` : ''}` : ''}`);
       }
       console.log(`Suggested roles from CV: ${p.suggested_roles.join('; ') || '-'}`);
-      console.log(`Applying: ${p.applying.mode} (daily cap ${p.applying.daily_cap}) | Documents language: ${p.documents_language} | Reply language: ${p.reply_language}`);
+      console.log(`Applying: ${p.applying.mode} (daily cap ${p.applying.daily_cap}) | CV to send: ${p.applying.cv_choice === 'original' ? 'the user\'s own CV as uploaded (no tailoring: hunt cv use-original)' : 'tailored to each job'} | Documents language: ${p.documents_language} | Reply language: ${p.reply_language}`);
       console.log(`Documents: ${docs.length ? docs.map((d) => `${d.type}:${d.title}`).join(', ') : 'none'}`);
       const miss = profileLib.missing(p, docs);
       if (miss.length) console.log(`Missing: ${miss.join(', ')}`);
@@ -338,6 +359,11 @@ async function main() {
         if (!pos[1]) fail('Usage: hunt docs add <file> --type cv');
         const d = await documents.add({ srcPath: pos[1], type: opt.type, title: opt.title, issuer: opt.issuer, date: opt.date, language: opt.language });
         return console.log(`Added ${d.id} (${documents.typeLabel(d.type)}), text: ${d.text_status}`);
+      }
+      if (sub === 'photo-from-cv') {
+        const d = await documents.photoFromCv();
+        if (!d) fail('No photo found in the uploaded CV. The user can add one on the Profile page.', 1);
+        return console.log(`CV photo taken from the CV: ${d.id} (workspace/documents/${d.file})`);
       }
       if (sub === 'extract') {
         const ids = pos[1] ? [pos[1]] : documents.list().map((d) => d.id);
@@ -386,16 +412,30 @@ async function main() {
         }
         fail('Usage: hunt cv design init --from <template id> | hunt cv design check [--lang en]');
       }
+      if (pos[0] === 'use-original') {
+        if (!opt.ticket) fail('Usage: hunt cv use-original --ticket JOB-12');
+        let rel;
+        try {
+          rel = cvLib.useOriginal(opt.ticket);
+        } catch (err) {
+          fail(err.message);
+        }
+        return console.log(`The user's own CV is this job's CV now (not tailored): ${rel}`);
+      }
       if (pos[0] === 'render') {
         const render = require('../lib/render');
+        const clean = require('../lib/humanize').cleanDeep;
         // --cv: a full CV in another language (same format as cv.json), e.g. docs/cv_it.json.
-        const cv = opt.cv ? readJsonFile(opt.cv) : cvLib.load();
+        const cv = opt.cv ? clean(readJsonFile(opt.cv)) : cvLib.load();
         if (!cv) fail('No structured CV yet. Use the "setup" skill first.');
+        if (opt.cv) factGate(cv, opt.ticket, 'CV');
         const cvProblems = cvLib.validate(cv);
         if (cvProblems.length) fail(`The CV file has problems:\n  - ${cvProblems.join('\n  - ')}`);
         const p = profileLib.loadProfile();
         const t = opt.ticket ? store.mustGet(opt.ticket) : null;
-        const merged = render.merge(cv, opt.overrides ? readJsonFile(opt.overrides) : {});
+        const overrides = opt.overrides ? clean(readJsonFile(opt.overrides)) : {};
+        if (opt.overrides) factGate(overrides, opt.ticket, 'CV');
+        const merged = render.merge(cv, overrides);
         const lang = opt.lang || 'en';
         // The look: the user's chosen template, unless this call names one.
         if (opt.template && opt.template !== true && !render.templates().some((x) => x.id === opt.template)) {
@@ -413,7 +453,7 @@ async function main() {
         const dir = t ? path.join(t._dir, 'docs') : paths.profileDir();
         const file = path.join(dir, `CV_${render.fileBase(merged.name || p.person.name)}_${render.locale(lang).code}.html`);
         const out = render.writeAndPrint(file, html);
-        if (t) store.setFields(t.key, { documents: { cv: path.relative(t._dir, out.pdf).split(path.sep).join('/') } }, { by: 'agent' });
+        if (t) store.setFields(t.key, { documents: { cv: path.relative(t._dir, out.pdf).split(path.sep).join('/'), cv_source: 'tailored' } }, { by: 'agent' });
         return console.log(`CV: ${paths.rel(out.pdf)}\nPages: ${out.pages}${out.pages > 1 ? '  (more than one page: shorten it, e.g. fewer bullets or merge old jobs)' : ''}\nTemplate: ${tpl.id} | Photo: ${photo ? 'yes' : wantPhoto ? 'no (no photo uploaded: the user adds one on the Profile page)' : 'no'}`);
       }
       if (pos[0] === 'set') {
@@ -452,12 +492,15 @@ async function main() {
       data = data.map((j) => {
         if (!j || !j.pool_key) return j;
         const item = postings.get(j.pool_key) || {};
-        const merged = { ...item, ...j, posting: j.posting || postings.readBody(j.pool_key) };
+        const merged = { ...item, ...j, link: j.link || item.url || '', posting: j.posting || postings.readBody(j.pool_key) };
         if (!merged.target && item.targets && item.targets.length) merged.target = item.targets[0];
         // Fully automatic: good enough jobs go straight to "To apply".
         if (prof.applying.mode === 'full_auto' && j.fit && Number(j.fit.score) >= prof.applying.min_fit && !j.status) merged.status = 'to_apply';
         return merged;
       });
+      // A job the AI found must keep the link to its ad: without it the user cannot check or apply.
+      const noLink = opt.by === 'user' ? [] : data.filter((j) => j && j.title && !require('../lib/dedupe').cleanUrl(j.link || j.url));
+      data = data.filter((j) => !noLink.includes(j));
       const res = store.addTickets(data, { by: opt.by === 'user' ? 'user' : 'agent', status: opt.status === 'to_apply' ? 'to_apply' : 'found' });
       for (const t of res.added) {
         const src = data.find((j) => j && j.pool_key && (j.title === t.title));
@@ -467,6 +510,11 @@ async function main() {
       console.log(`Added ${res.added.length} ticket(s)${res.added.length ? `: ${res.added.map((t) => t.key).join(', ')}` : ''}.`);
       if (res.duplicates.length) console.log(`Skipped ${res.duplicates.length} duplicate(s):\n  - ${res.duplicates.map((d) => `"${d.job.title}" at ${d.job.company || '?'} (already ${d.key})`).join('\n  - ')}`);
       if (res.invalid.length) console.log(`Skipped ${res.invalid.length} entr${res.invalid.length > 1 ? 'ies' : 'y'} without a title.`);
+      if (noLink.length) {
+        console.log(`NOT added, no link to the ad: ${noLink.map((j) => `"${j.title}" at ${j.company || '?'}`).join('; ')}.
+Add "link": the full URL of the ad as the board shows it (or the "pool_key" from candidates), then run add again with only these jobs.`);
+        process.exitCode = 1;
+      }
       return;
     }
 
@@ -560,7 +608,8 @@ async function main() {
       if (pos[0] !== 'render' || !pos[1] || !opt.ticket) fail('Usage: hunt letter render <letter.json> --ticket JOB-12 [--lang it]');
       const render = require('../lib/render');
       const t = store.mustGet(opt.ticket);
-      const letter = readJsonFile(pos[1]);
+      const letter = require('../lib/humanize').cleanDeep(readJsonFile(pos[1]));
+      factGate(letter, t.key, 'cover letter');
       const lang = opt.lang || letter.language || 'en';
       const file = path.join(t._dir, 'docs', `Cover_letter_${render.fileBase(t.company || 'company')}_${render.locale(lang).code}.html`);
       const out = render.writeAndPrint(file, render.letterHtml(letter, profileLib.loadProfile(), { lang }));
@@ -583,24 +632,43 @@ async function main() {
     }
 
     case 'factcheck': {
-      const problems = require('../lib/factcheck').check(readJsonFile(pos[0]), { ticket: opt.ticket });
-      if (!problems.length) return console.log('Fact check OK: every number, level and acronym is in the user\'s data or the job ad.');
-      console.log(`Check these, they are not in the CV, profile, documents or job ad: ${problems.join(', ')}\nRemove them or ask the user (hunt ask) before you go on.`);
+      if (!pos[0] || !fs.existsSync(pos[0])) fail('Usage: hunt factcheck <file.json|file.txt> [--ticket KEY] [--lang de]');
+      // A JSON document (CV changes, letter) or the plain text of an e-mail.
+      const generated = /\.json$/i.test(pos[0]) ? readJsonFile(pos[0]) : fs.readFileSync(pos[0], 'utf8');
+      const fc = require('../lib/factcheck');
+      const problems = fc.check(generated, { ticket: opt.ticket });
+      const style = styleLines(generated, opt.lang || (generated && generated.language) || '');
+      if (!problems.length) {
+        console.log(`Fact check OK: every number, level, acronym${fc.isCv(generated) ? ', skill and employer' : ''} is in the user's data${fc.isCv(generated) ? '' : ' or the job ad'}.`);
+        if (style) console.log(style);
+        return;
+      }
+      console.log(`Check these, they are not in the user's CV, profile, documents or notes${fc.isCv(generated) ? ' (in a CV the job ad does not count)' : ' or the job ad'}:\n  - ${problems.join('\n  - ')}\nRemove them or ask the user (hunt ask) before you go on.`);
+      if (style) console.log(style);
       process.exit(1);
       return;
     }
 
     case 'email': {
-      if (pos[0] !== 'draft' || !opt.ticket || !opt.to || !opt['body-file']) fail('Usage: hunt email draft --ticket JOB-12 --to jobs@company.com --subject "…" --body-file body.txt');
+      if (pos[0] !== 'draft' || !opt.ticket || !opt['body-file']) fail('Usage: hunt email draft --ticket JOB-12 [--to jobs@company.com] --subject "…" --body-file body.txt');
+      if (opt.to === true) opt.to = '';
       const t = store.mustGet(opt.ticket);
       const p = profileLib.loadProfile();
       const files = ['cv', 'cover_letter', 'attachments'].map((k) => t.documents && t.documents[k]).filter(Boolean).map((r) => path.join(t._dir, r)).filter((f) => fs.existsSync(f));
-      const eml = require('../lib/eml').build({ from: p.person.email ? `${p.person.name} <${p.person.email}>` : p.person.name, to: opt.to, subject: opt.subject || t.title, body: fs.readFileSync(opt['body-file'], 'utf8'), attachments: files });
+      const body = require('../lib/humanize').clean(fs.readFileSync(opt['body-file'], 'utf8'));
+      const subject = opt.subject && opt.subject !== true ? opt.subject : t.title;
+      const eml = require('../lib/eml').build({ from: p.person.email ? `${p.person.name} <${p.person.email}>` : p.person.name, to: opt.to || '', subject, body, attachments: files });
       const out = path.join(t._dir, 'docs', 'Application_email.eml');
       fs.mkdirSync(path.dirname(out), { recursive: true });
       fs.writeFileSync(out, eml);
-      store.setFields(t.key, { documents: { email_draft: 'docs/Application_email.eml' }, apply: { route: 'email', to: opt.to } }, { by: 'agent' });
-      return console.log(`E-mail draft with ${files.length} attachment(s): ${paths.rel(out)}. The user opens it, checks it and presses Send.`);
+      // The same text to copy into a web mail or a contact form.
+      fs.writeFileSync(path.join(t._dir, 'docs', 'Application_email.txt'), `${opt.to ? `To: ${opt.to}
+` : ''}Subject: ${subject}
+
+${body.trim()}
+`);
+      store.setFields(t.key, { documents: { email_draft: 'docs/Application_email.eml' }, apply: { route: 'email', ...(opt.to ? { to: opt.to } : {}) } }, { by: 'agent' });
+      return console.log(`E-mail draft with ${files.length} attachment(s): ${paths.rel(out)} (text to copy: docs/Application_email.txt).${opt.to ? '' : ' No address yet: the user fills in "To".'} The user opens it, checks it and presses Send.`);
     }
 
     case 'sent': {
@@ -683,7 +751,10 @@ async function main() {
         console.log(`${id}: country ${p.country} | max age ${p.max_age_days} days | updated ${p.updated_at.slice(0, 10)}`);
         console.log(`  boards: ${p.boards.map((b) => `${b.id}${b.enabled ? '' : ' (off)'}`).join(', ')}`);
         console.log(`  search words: ${p.queries.join('; ')}`);
+        if ((p.places || []).length) console.log(`  places: ${p.places.map((x) => `${x.name}${x.kind === 'region' ? ` (region${x.aliases.length ? `, also ${x.aliases.join('/')}` : ''}${(x.centers || []).length ? `; around ${x.centers.join(', ')}` : ''})` : ''}`).join('; ')}`);
         if (p.towns.length) console.log(`  towns: ${p.towns.join(', ')}`);
+        const miss = require('../lib/places').missingFromPlan(profileLib.loadProfile(), profileLib.loadProfile().targets.find((t) => t.id === id), p);
+        if (miss.length) console.log(`  THE PLACES CHANGED since this plan was made (not in it: ${miss.join(', ')}): make the plan again with the plan-search skill.`);
         if (p.companies.length) console.log(`  companies: ${p.companies.map((c) => c.name).join(', ')}`);
       }
       return;
@@ -824,6 +895,42 @@ async function main() {
     case 'pdf': {
       const { pdf, pages } = require('../lib/pdf').htmlToPdf(pos[0], pos[1]);
       console.log(`PDF created: ${pdf}\nPages: ${pages}${pages > 1 ? '  (more than one page: shorten the text if it should fit on one)' : ''}`);
+      return;
+    }
+
+    case 'update': {
+      // With the app running, the app does the update (it knows whether the AI is busy, and restarts itself).
+      const running = await api('GET', '/api/update/status').catch(() => null);
+      if (opt.check) {
+        const r = running ? await api('GET', '/api/update/check?fresh=1').catch((err) => fail(err.message, 1)) : await require('../lib/update').check().catch((err) => fail(`Could not check for updates: ${err.message}`, 1));
+        if (!r.available) return console.log(`Huntboard ${r.current} is the newest version${r.unknown ? ' (as far as this download can tell; "update" installs the newest anyway)' : ''}.`);
+        return console.log(`A new version is ready: ${r.current} → ${r.latest}${r.behind ? ` (${r.behind} change(s))` : ''}.${r.changes.length ? `\n  - ${r.changes.join('\n  - ')}` : ''}\nRun: node tools/hunt.js update`);
+      }
+      if (running) {
+        try {
+          await api('POST', '/api/update/apply');
+        } catch (err) {
+          fail(err.message, 1);
+        }
+        console.log('Huntboard is updating itself (your data stays as it is)…');
+        let shown = 0;
+        for (let i = 0; i < 1200; i++) {
+          await sleep(1500);
+          const s = await api('GET', '/api/update/status').catch(() => null);
+          if (!s) return console.log('Huntboard is restarting with the new version. You can keep using it.');
+          for (const line of s.log.slice(shown)) console.log(`  ${line}`);
+          shown = s.log.length;
+          if (s.error) fail(s.error, 1);
+          if (s.done && !s.running) return console.log('Done. Huntboard is restarting with the new version.');
+        }
+        return;
+      }
+      try {
+        const res = await require('../lib/update').apply({ log: (m) => console.log(`  ${m}`) });
+        console.log(`Huntboard is up to date (${res.from} → ${res.to}). Start it again with start.bat / start.sh.${res.backup ? `\nYour data was backed up to ${res.backup}.` : ''}`);
+      } catch (err) {
+        fail(err.message, 1);
+      }
       return;
     }
 

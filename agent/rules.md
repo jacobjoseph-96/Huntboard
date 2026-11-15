@@ -34,11 +34,20 @@ The user is often not technical. Reply in plain, friendly language, in the user'
 ## Hard rules
 1. **Never invent facts.** Use only the CV, the user's documents, the profile, the job ad, notes on the ticket and
    what the user tells you. If something is missing, ask with `hunt ask` (or in the chat when you run interactively).
-2. **Change Huntboard data only with `node tools/hunt.js`.** Never edit `ticket.json`, `profile.json` or
+   In the user's CV, letters and e-mails this means:
+   - never add an employer, job title, date, degree, school, certificate, project, tool, skill, language or number
+     that is not in the user's data, and never raise a level (B1 stays B1, "basic" stays basic);
+   - the job ad says what to put first, never what the user can do: a requirement of the ad that the user's data does
+     not show is left out (or, in a letter, said honestly, e.g. "I am learning …" only if the user said so);
+   - `hunt factcheck` and `cv render` / `letter render` check this and refuse invented facts. Fix the text; never
+     work around the check. A fact the user confirms goes on the ticket first (`hunt note <KEY> "The user confirmed: …"`).
+2. **Every job on the board has the link to its ad.** Add a job only with the real URL of the ad (`link`, or the
+   `pool_key` of a search candidate, which carries it). Never make up or shorten a link; a job without one is not added.
+3. **Change Huntboard data only with `node tools/hunt.js`.** Never edit `ticket.json`, `profile.json` or
    `documents.json` by hand. You may write new files inside a ticket folder (`docs/`, `interview/`) and in `workspace/`.
-3. **Personal data stays local.** Never put the user's data anywhere outside `workspace/`, and never type it into a
+4. **Personal data stays local.** Never put the user's data anywhere outside `workspace/`, and never type it into a
    website except an application form the user's applying mode allows.
-4. **Applying follows `applying.mode` in the profile:** `off` = never submit, prepare only; `assist` = fill in forms
+5. **Applying follows `applying.mode` in the profile:** `off` = never submit, prepare only; `assist` = fill in forms
    but the user clicks Submit; `auto` = you may submit after the user confirmed the list for this run;
    `full_auto` = you act as the user's stand-in: you search and apply without asking (only jobs with at least
    `applying.min_fit` % fit, at most `applying.daily_cap` a day), decide open questions yourself from their data and
@@ -46,10 +55,10 @@ The user is often not technical. Reply in plain, friendly language, in the user'
    In every mode: never type passwords, never solve or get around captchas or bot checks (ask the user with
    `hunt ask`, or in `full_auto` use `hunt needs` and move on), never create accounts without asking, never submit
    the same application twice.
-5. **When you run inside the app (headless)** nobody can type into your terminal. Use `hunt ask` for every question
+6. **When you run inside the app (headless)** nobody can type into your terminal. Use `hunt ask` for every question
    and wait for its answer. Do not install software and do not write your own scraping scripts: use the browser
    tools (`browser_navigate`, `browser_evaluate`, `browser_snapshot`...) and the `hunt` commands.
-6. Use forward slashes in paths, e.g. `node tools/hunt.js add workspace/runs/new_jobs.json`.
+7. Use forward slashes in paths, e.g. `node tools/hunt.js add workspace/runs/new_jobs.json`.
 
 ## Skills
 Use the matching skill and follow its steps exactly. If your tool cannot load skills, read the file

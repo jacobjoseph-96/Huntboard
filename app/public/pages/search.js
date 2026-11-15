@@ -4,6 +4,10 @@ let mainEl = null;
 
 const TYPE = (id) => (app.meta.job_types.find((j) => j.id === id) || { label: id }).label;
 const SCOPE = { cv: 'jobs in my field', any: 'any job', custom: 'my chosen roles' };
+// Where a search looks: its own places, else the profile's "Search for jobs in", else where the user lives.
+const placesOf = (t, p) => (t.location && (t.location.places || []).length ? t.location.places
+  : t.location && t.location.city ? [t.location.city]
+    : (p.location.places || []).length ? p.location.places : [p.location.city].filter(Boolean));
 
 // The time range of a search (plan.max_age_days). Same choices as lib/plan.js AGE_CHOICES.
 const AGES = [[1, 'day (same day)'], [3, '3 days'], [7, 'week'], [14, '2 weeks'], [30, 'month'], [60, '2 months']];
@@ -33,7 +37,7 @@ export async function render(main) {
     <div class="grid two" style="margin-top:14px">${s.profile.targets.map((t) => html`<div class="card">
       <div class="row"><h2 style="margin:0">${t.name}</h2>${t.active ? '' : html`<span class="badge">off</span>`}</div>
       <p class="muted small" style="margin-top:4px">${t.job_types.map(TYPE).join(' / ')} · ${SCOPE[t.roles.scope]}${t.roles.titles.length ? `: ${t.roles.titles.join(', ')}` : ''}
-        · ${(t.location && t.location.city) || s.profile.location.city || '?'} + ${(t.location && t.location.radius_km) || s.profile.location.radius_km} km${plans[t.id] ? ` · ads from the last ${plans[t.id].max_age_days} day${plans[t.id].max_age_days === 1 ? '' : 's'}` : ''}${s.profile.location.remote !== 'no' ? ' · remote too' : ''}</p>
+        · ${placesOf(t, s.profile).join(', ') || '?'} + ${(t.location && t.location.radius_km) || s.profile.location.radius_km} km${plans[t.id] ? ` · ads from the last ${plans[t.id].max_age_days} day${plans[t.id].max_age_days === 1 ? '' : 's'}` : ''}${s.profile.location.remote !== 'no' ? ' · remote too' : ''}</p>
       ${plans[t.id] ? html`<div class="small" style="margin-top:8px"><b>Job boards</b> <span class="hint">click to switch on/off</span>
           <div class="row" style="margin-top:4px;gap:6px">${plans[t.id].boards.map((b) => html`<button class="chip ${b.enabled ? 'on' : ''}" data-toggle="${t.id}|${b.id}|${b.enabled ? 'off' : 'on'}" title="${b.why || ''}">${boardName(b.id)}</button>`)}</div>
           <div class="row" style="margin-top:8px;gap:6px"><b>Jobs posted in the last</b> ${ageSelect(t.id, plans[t.id].max_age_days)}</div>

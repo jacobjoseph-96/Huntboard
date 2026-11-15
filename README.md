@@ -24,9 +24,11 @@ kind of job you want and where you live, and the AI tool you already have does t
   get the ad, and reads those boards from then on.
 - **Tracks everything as tickets** on a board: Found → To apply → Applied → Interview → Offer → Closed, with the
   full ad text, notes and history of every job.
-- **Writes your documents:** a CV in the language and style of the country you apply in, tailored to each job, cover
-  letters, an attachments PDF and e-mail drafts, all checked against your real data. You choose the CV's design
-  (six ready-made ones, or the look of your own CV) and add your photo on the Profile page.
+- **Writes your documents:** a CV in the language and style of the country you apply in, tailored to each job (or
+  your own CV exactly as you uploaded it), cover letters, application e-mails, an attachments PDF, all checked
+  against your real data: nothing the job ad asks for is added to your CV unless you really have it. The text is
+  written in your own words and cleaned of hidden characters. You choose the CV's design (six ready-made ones, or
+  the look of your own CV) and add your photo on the Profile page, or take it from your CV with one click.
 - **Applies, as far as you allow:** prepare only · fill in the forms for you to submit · apply after you OK the list ·
   **fully automatic** while you are away: it decides for you from your profile, writes every decision down and leaves
   only what truly needs you (robot checks, logins) on a "Needs you" list.
@@ -76,6 +78,13 @@ what jobs you want, and how far the AI may go when applying.
 | <img src="docs/images/search.png" alt="Find jobs" width="420"> | <img src="docs/images/ticket.png" alt="A ticket" width="420"> |
 | <img src="docs/images/setup.png" alt="Setup" width="420"> | <img src="docs/images/applying.png" alt="Applying settings" width="420"> |
 
+### Updating
+
+Settings → **Updates** → "Update now", or double-click `update.bat` (macOS / Linux: `sh update.sh`). It works for a
+git clone and for a downloaded copy. Your CV, documents, jobs and settings stay as they are: they live in
+`workspace/`, which an update never changes, and a backup is made first (`workspace/backups/`). Huntboard restarts
+by itself.
+
 ### More job boards (optional)
 
 Many boards work without anything. Adzuna and Jooble need a free API key: copy `.env.example` to `.env` and fill it in.
@@ -98,6 +107,7 @@ token. More: [docs/privacy.md](docs/privacy.md).
 | A board shows "Verify you are human" | Solve it in the AI's browser window when the app asks you. Huntboard never gets around these checks. |
 | The CV is two pages | Ask in the chat: "make the CV fit on one page". |
 | Port 4317 is busy | Huntboard is probably already running: `start.bat` opens the existing window. |
+| "The update stops to keep your changes" | You (or someone) edited program files. Undo those edits, or ask in an issue. Your data is fine. |
 
 ## For developers
 

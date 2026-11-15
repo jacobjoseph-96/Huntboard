@@ -1,4 +1,4 @@
-import { app, api, html, raw, toast, confirmDialog, startRun, hasSkill, refreshState, docUrl, tokenUrl, ago, $, $$ } from '../app.js';
+import { app, api, apiKeepalive, html, raw, toast, confirmDialog, startRun, hasSkill, refreshState, docUrl, tokenUrl, ago, $, $$ } from '../app.js';
 import * as F from './forms.js';
 
 let mainEl = null;
@@ -19,15 +19,21 @@ export async function render(main) {
       ${raw(documentsBlock())}
     </div>
     <div class="card"><h2>CV photo and design</h2><div id="cv-look"><p class="muted">Loading…</p></div></div>
-    <div class="card"><h2>Contact details</h2>${F.raw(F.personSection(profile))}</div>
-    <div class="card"><h2>About you</h2>${F.raw(F.aboutSection(profile))}
+    <div class="card autosave"><h2>Contact details</h2>${F.raw(F.personSection(profile))}</div>
+    <div class="card autosave"><h2>About you</h2>${F.raw(F.aboutSection(profile))}
       ${profile.suggested_roles.length ? html`<h3 style="margin-top:14px">Jobs that fit your CV <span class="hint">(suggested by the AI)</span></h3>
         <div class="row">${profile.suggested_roles.map((r) => html`<span class="chip">${r}</span>`)}</div>` : ''}</div>
-    <div class="row end" style="margin-top:14px"><button class="btn primary big" id="save">Save profile</button></div>
+    <div class="row end" style="margin-top:14px"><span id="save-status" class="small muted">Changes are saved by themselves</span><span class="spacer"></span><button class="btn primary big" id="save">Save profile</button></div>
   </div>`.s;
   bindDocuments(main, () => render(main));
   F.bindAbout(main);
-  $('#save', main).addEventListener('click', save);
+  $('#save', main).addEventListener('click', () => { clearTimeout(timer); dirty = false; save(); });
+  // Contact details and "About you" are saved a moment after typing stops, and when you leave the page.
+  $$('.autosave', main).forEach((card) => {
+    card.addEventListener('input', markDirty);
+    card.addEventListener('change', markDirty);
+    card.addEventListener('click', (e) => { if (e.target.closest('button[type=button]')) setTimeout(markDirty, 0); });
+  });
   $('#ai-read', main).addEventListener('click', async () => {
     if (!app.state.documents.some((d) => d.type === 'cv')) return toast('Upload your CV first.', true);
     await save(true);
@@ -69,6 +75,7 @@ async function renderCvLook() {
         <button class="btn small" id="photo-pick">${info.photo ? 'Change photo' : 'Add a photo'}</button>
         ${info.photo ? html`<button class="btn small ghost danger" id="photo-del">Remove</button>` : ''}
       </div>
+      <button class="btn small" id="photo-cv" type="button" ${hasCvDoc ? '' : 'disabled'} title="${hasCvDoc ? 'Use the photo that is in your uploaded CV (PDF or Word)' : 'Upload your CV first'}">Take the photo from my CV</button>
       <input type="file" id="photo-file" hidden accept=".jpg,.jpeg,.png,.webp">
       <label class="field">Show my photo on the CV
         <select id="photo-mode">${PHOTO_MODES.map(([v, l]) => html`<option value="${v}" ${(cv.photo || 'auto') === v ? 'selected' : ''}>${l}</option>`)}</select></label>
@@ -119,6 +126,17 @@ async function renderCvLook() {
     }
     render(mainEl);
   });
+  $('#photo-cv', box).addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try {
+      await api('POST', '/api/cv/photo-from-cv');
+      toast('Photo taken from your CV');
+      render(mainEl);
+    } catch (err) {
+      toast(err.message, true);
+      e.target.disabled = false;
+    }
+  });
   const del = $('#photo-del', box);
   if (del) {
     del.addEventListener('click', async () => {
@@ -143,19 +161,49 @@ async function renderCvLook() {
   });
 }
 
+let dirty = false;
+let timer = null;
+
+function markDirty() {
+  dirty = true;
+  const st = mainEl && $('#save-status', mainEl);
+  if (st) { st.className = 'small muted'; st.textContent = 'Not saved yet…'; }
+  clearTimeout(timer);
+  timer = setTimeout(() => { dirty = false; save(true); }, 700);
+}
+
 async function save(quiet) {
+  if (!mainEl || !$('[name=p_name]', mainEl)) return;
   F.readPerson(mainEl, profile);
   F.readAbout(mainEl, profile);
+  const st = $('#save-status', mainEl);
   try {
-    const fresh = await api('GET', '/api/profile');
-    // Only the sections on this page are taken from the form.
-    const merged = { ...fresh, person: profile.person, about: profile.about };
-    profile = await api('PUT', '/api/profile', merged);
+    // Only the sections on this page are sent, so nothing else in the profile is overwritten.
+    const out = await api('PATCH', '/api/profile', { person: profile.person, about: profile.about });
+    profile.person = out.person;
+    profile.about = out.about;
     await refreshState();
+    if (st && st.isConnected) { st.className = 'small muted'; st.textContent = 'All changes saved'; }
     if (quiet !== true) toast('Profile saved');
   } catch (err) {
+    if (st && st.isConnected) { st.className = 'small bad-text'; st.textContent = `Not saved: ${err.message}`; }
     toast(err.message, true);
   }
+}
+
+window.addEventListener('pagehide', () => {
+  if (!dirty || app.pageName !== 'profile' || !mainEl || !$('[name=p_name]', mainEl)) return;
+  dirty = false;
+  F.readPerson(mainEl, profile);
+  F.readAbout(mainEl, profile);
+  apiKeepalive('PATCH', '/api/profile', { person: profile.person, about: profile.about });
+});
+
+export function leave() {
+  if (!dirty) return;
+  clearTimeout(timer);
+  dirty = false;
+  save(true);
 }
 
 export function documentsBlock() {

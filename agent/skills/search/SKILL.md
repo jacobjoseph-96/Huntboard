@@ -8,7 +8,8 @@ description: Searches the job boards of the search plan for new jobs, reads the 
 Follow `AGENTS.md`. Never invent facts about a job or the user. Do this for each active search target (or only the
 target named in your task).
 
-1. If `node tools/hunt.js plan show --target <id>` says there is no plan, use the `plan-search` skill first.
+1. If `node tools/hunt.js plan show --target <id>` says there is no plan, or that the places changed since the plan
+   was made, use the `plan-search` skill first.
 2. **Company job boards (once a day).** Many companies post on their own applicant-tracking site days before the big
    boards get the ad. Run `node tools/hunt.js discover due --target <id>`. Only if it prints `due`, search the web
    for those sites: at most 14 searches, each one search word of the plan (in quotes) plus the plan's country name,
@@ -27,10 +28,12 @@ target named in your task).
 3. Run `node tools/hunt.js search run --target <id>`. It searches the API boards, drops jobs that are clearly wrong
    (too far, too old, already on the board, the user's "avoid" words, scams), reads the ad texts and prints a report.
 4. **Browser boards** listed in the report: search each one with the browser tools, following its playbook in
-   `boards/playbooks/`. Use the plan's search words and towns, the plan's time range (`max_age_days`: the board's
+   `boards/playbooks/`. Search **each place** of the plan (`places`: cities with the radius; regions such as
+   "Sachsen" or "Nordrhein-Westfalen" as the board's place, without a radius), with the plan's search words, the plan's time range (`max_age_days`: the board's
    "posted in the last N days" filter, the nearest choice that covers it), the first 2 result pages per search word, and open
    the ads that look relevant to copy their full text. Save the jobs as a JSON array in `<workspace>/tmp/` and run
-   `node tools/hunt.js ingest <file> --target <id> --source <board id>`. If a board shows a robot check, follow the
+   `node tools/hunt.js ingest <file> --target <id> --source <board id>`. Every job needs its `url`: the full link of
+   the ad as the board shows it (copy it from the card's link, never build or guess one). If a board shows a robot check, follow the
    playbook (never get around it). Do not spend more than about 15 minutes on one board.
 5. Read the candidates: `node tools/hunt.js candidates --target <id> --json` (max 40 at a time; repeat after adding
    or skipping them). For each one decide **from the ad text and the user's profile**:
@@ -44,12 +47,13 @@ target named in your task).
    `node tools/hunt.js candidates skip <key> <key> --reason "<short reason>"`.
 6. Add the others in one go: write `<workspace>/tmp/new_jobs.json` and run `node tools/hunt.js add <workspace>/tmp/new_jobs.json`:
    ```json
-   [{ "pool_key": "<key from candidates>", "title": "…", "company": "…", "location": "…", "mode": "on site | hybrid | remote",
+   [{ "pool_key": "<key from candidates>", "link": "<the ad's URL, as candidates shows it>", "title": "…", "company": "…", "location": "…", "mode": "on site | hybrid | remote",
       "job_type": "Part-time", "salary": "as stated, else empty", "target": "<id>",
       "summary": "2–3 sentences: what the job is", "requirements": "requirements separated by ; ",
       "fit": { "score": 78, "verdict": "Good – …", "reasons": ["…"], "red_flags": ["…"], "scored_with": "<your model name>" } }]
    ```
-   `pool_key` makes Huntboard keep the full ad text with the ticket. In fully automatic mode, jobs at or above the
+   `pool_key` makes Huntboard keep the full ad text and the link with the ticket. **A job without a link to its ad
+   is not added** (`add` says which ones): find the link and add them again, never invent one. In fully automatic mode, jobs at or above the
    user's minimum fit go straight to "To apply" (the app then starts applying).
 7. Reply with a short summary per target: how many jobs were found, filtered out (main reasons), unread, skipped
    by you, added; the top 5 new jobs as `KEY – job – company – town – why it fits`; and boards that need the user

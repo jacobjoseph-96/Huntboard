@@ -1,6 +1,6 @@
 {
   "name": "huntboard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local job search and application app driven by the AI tool you already use: finds jobs that fit your CV and area, tracks them as tickets, tailors documents, applies and prepares you for interviews.",
   "license": "MIT",
   "repository": {
@@ -24,7 +24,8 @@
     "sync": "node tools/sync-agents.js",
     "sync:check": "node tools/sync-agents.js --check",
     "test": "node --test \"test/*.test.js\"",
-    "postinstall": "node tools/sync-agents.js --quiet"
+    "postinstall": "node tools/sync-agents.js --quiet",
+    "update": "node tools/hunt.js update"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

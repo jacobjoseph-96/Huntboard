@@ -5,8 +5,9 @@ Use this for every board without its own playbook. You use the browser tools (`b
 
 1. Open the board's URL from `node tools/hunt.js boards list` (or the search plan).
 2. Accept or reject the cookie banner (prefer "reject" / "only necessary"). Never log in unless the user already is.
-3. Use the board's own search form: type one search word from the plan into the "what" field and the city into the
-   "where" field; set the distance (radius) and "posted in the last N days" filters if the board has them.
+3. Use the board's own search form: type one search word from the plan into the "what" field and one place of the
+   plan (`places`) into the "where" field; set the distance (radius, for a city only) and "posted in the last N days"
+   filters if the board has them. Repeat for each place of the plan.
 4. On the result list, read the cards with `browser_evaluate` instead of screenshots. Start from this and adapt the
    selectors to what `browser_snapshot` shows:
    ```js

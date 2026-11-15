@@ -29,14 +29,24 @@ Follow `AGENTS.md`. Do one plan per active search target (or only the target nam
    Also fill `title_keywords`: single words a matching job title contains (used to filter results), and
    `exclude_keywords`: words that mean the job is wrong (e.g. "senior", "Ausbildung" if not wanted). For `any`
    targets leave `title_keywords` empty.
-5. **Towns** (`towns`): the user's city and the towns within the radius (`location.radius_km`, or the target's own
-   location), the way they are written in ads, at most 40. If remote work is allowed, add "Remote".
+5. **Places and towns.** The places to search are the target's own places, else the profile's "Search in" places
+   (`hunt profile` → `Search in:`), else the user's city. Several places are normal (e.g. "Berlin, Leipzig, Sachsen,
+   Niedersachsen"). Add an entry to `places` for each one:
+   - a **city**: `{ "name": "Leipzig", "kind": "city" }`, and its towns within the radius (`location.radius_km`, or
+     the target's own radius) to `towns`;
+   - a **region** (a German Land, an Austrian Bundesland, an Italian regione, a Spanish comunidad, a French région, a
+     province…): `{ "name": "Sachsen", "kind": "region", "aliases": ["Saxony"], "centers": ["Leipzig", "Dresden", "Chemnitz"] }`.
+     `aliases`: its other names, **the English name first** (LinkedIn searches the region by it). `centers`: its 2–4
+     biggest cities, spread over the region (boards that cannot search a whole region search 50 km around each).
+     Add its main cities and towns (up to 40 per region) to `towns`.
+   Write `towns` the way they are written in ads, at most 300 in all. If remote work is allowed, add "Remote".
 6. **Companies** (optional): if the user named employers they want, or the field has well-known local employers,
    list up to 20 as `{"name": "…"}`; Huntboard checks their career pages itself.
 7. Write the plan to `<workspace>/tmp/plan_<target>.json` and save it:
    `node tools/hunt.js plan set <workspace>/tmp/plan_<target>.json --target <id>`
    ```json
    { "country": "IT", "queries": ["…"], "title_keywords": ["…"], "exclude_keywords": [], "towns": ["…"],
+     "places": [{ "name": "Rimini", "kind": "city" }, { "name": "Emilia-Romagna", "kind": "region", "aliases": ["Emilia-Romagna"], "centers": ["Bologna", "Parma", "Ravenna"] }],
      "languages": ["Italian", "English"], "max_age_days": 14,
      "boards": [{ "id": "indeed", "why": "most ads in Italy" }, { "id": "subito_lavoro", "why": "local part-time jobs" }],
      "companies": [], "notes": "…" }

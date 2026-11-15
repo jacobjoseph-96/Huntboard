@@ -1,6 +1,37 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
+
+- **Update with one click, keep everything.** Settings → Updates (or `update.bat` / `sh update.sh` /
+  `node tools/hunt.js update`) gets the newest Huntboard: with git it pulls, a downloaded copy gets the newest
+  files. Your data in `workspace/` and your `.env` are never touched; a backup is made first (`workspace/backups/`,
+  last 3 kept), then the app restarts by itself. The sidebar shows "update ready" when there is a new version.
+  One-time data changes of a new version run by themselves (`lib/migrate.js`).
+- **Take the photo from my CV**: on the Profile page, one click takes the photo out of the CV you uploaded (PDF or
+  Word); logos and icons are skipped.
+- **Use my CV as it is**: a ticket button, and Settings → Applying → "Which CV to send", to send the CV you uploaded
+  unchanged instead of a tailored one (`hunt cv use-original --ticket KEY`).
+- **Write an e-mail**: a ticket button and the new `email` skill: a short application e-mail in the job's language,
+  as a draft with your CV and letter attached (`Application_email.eml`) and as text to copy.
+- **No invented facts in your CV.** The fact check now knows that the job ad is not the user's data: a skill, tool
+  or acronym only the ad has, an employer that is not in your CV, or more jobs than you have are refused, and
+  `cv render` / `letter render` do not make a document until it is fixed. Every writing task repeats the truth
+  rules in its prompt (some models skim long rule files).
+- **Sounds like you.** Invisible characters (zero-width spaces, soft hyphens, odd spaces) are removed from every
+  CV, letter and e-mail, which also helps online forms read them. The fact check prints style hints (AI clichés in
+  five languages, em dashes, sentences all of one length), and the writing rules ask for the user's own words.
+- **Several places per search**: "Search for jobs in" takes cities and regions ("Berlin, Leipzig, Sachsen,
+  Niedersachsen"). Each place is searched; regions are searched as a whole on LinkedIn and around their main cities
+  on the other boards. "Sachsen" no longer matches "Niedersachsen".
+- **Every ticket keeps the link to its ad.** Jobs added from a search lost their link; they keep it now, a job
+  without a link is not added, and the links of existing tickets are put back.
+- **Settings save themselves**, a moment after you type and when you switch tab or leave the page; nothing is lost
+  any more. A **Clear** button empties a tab. The Profile page saves by itself too.
+- An unnamed search shows its name as a grey hint, so you can just type.
+- **The right model for each task** (Settings → AI tool → Models): a light model for simple tasks, a strong one for
+  CVs, letters and interviews, so your usage limit lasts longer. Claude Code: "Use the suggested models".
+
+### Also in 0.2.0 (changes since 0.1.0)
 
 - CV designs: six ready-made templates (Classic, Modern, Sidebar, Tabular / German style, Academic and medical,
   Creative) and "My own design", which the new `cv-design` skill copies from the CV you uploaded. Choose one on the

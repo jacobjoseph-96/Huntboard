@@ -88,6 +88,12 @@ export async function api(method, path, body) {
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
   return data;
 }
+// A save that must arrive even while the page is closing (autosave when the window closes).
+export function apiKeepalive(method, path, body) {
+  try {
+    fetch(path, { method, keepalive: true, headers: { 'x-huntboard-token': TOKEN, 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  } catch { /* the page is gone */ }
+}
 export const fileUrl = (key, rel, download) => `/api/tickets/${encodeURIComponent(key)}/file?path=${encodeURIComponent(rel)}${download ? '&download=1' : ''}&token=${encodeURIComponent(TOKEN)}`;
 export const docUrl = (id) => `/api/documents/${encodeURIComponent(id)}/file?token=${encodeURIComponent(TOKEN)}`;
 // Any API file address the browser opens itself (an <img>, a new tab): it cannot send the token header.
@@ -371,7 +377,7 @@ async function route() {
 function connect() {
   const es = new EventSource(`/api/events?token=${encodeURIComponent(TOKEN)}`);
   const pass = (name, data) => app.page && app.page.onEvent && app.page.onEvent(name, data);
-  for (const ev of ['tickets', 'profile', 'asks', 'run']) {
+  for (const ev of ['tickets', 'profile', 'asks', 'run', 'update']) {
     es.addEventListener(ev, async (e) => {
       const data = JSON.parse(e.data || '{}');
       if (ev === 'run') {
@@ -401,6 +407,16 @@ async function boot() {
   await route();
   connect();
   checkAsks();
+  checkUpdate();
+}
+
+// Once per start: is there a newer Huntboard? Then the version in the sidebar says so and links to Settings.
+async function checkUpdate() {
+  try {
+    const r = await api('GET', '/api/update/check');
+    const el = $('#version');
+    if (r.available && el) el.innerHTML = html`<a href="#/settings?tab=update" title="Huntboard ${r.latest} is ready: your data stays as it is">v${app.meta.version} · <b>update ready</b></a>`.s;
+  } catch { /* offline: no matter */ }
 }
 
 boot().catch((err) => {

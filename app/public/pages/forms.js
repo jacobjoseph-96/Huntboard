@@ -10,10 +10,14 @@ export function targetsSection(profile) {
       <span class="hint">Example: one search for full-time jobs in your field and one for any mini-job nearby.</span></div>`.s;
 }
 
+// A search the user did not name shows its generated name as a grey hint, so typing a name needs no deleting.
+const autoName = (t) => !t.name || t.name_auto || t.name === 'My search';
+
 function targetBox(t, i) {
   const suggested = app.state.profile.suggested_roles || [];
+  const places = (t.location && (t.location.places || []).length ? t.location.places : (t.location && t.location.city ? [t.location.city] : [])).join(', ');
   return html`<div class="target" data-target="${i}">
-    <div class="row"><input type="text" name="t_name" value="${t.name}" placeholder="Name of this search" style="max-width:340px">
+    <div class="row"><input type="text" name="t_name" value="${autoName(t) ? '' : t.name}" placeholder="${autoName(t) && t.name ? t.name : 'Name of this search (optional)'}" aria-label="Name of this search" style="max-width:340px">
       <label class="check small"><input type="checkbox" name="t_active" ${t.active ? 'checked' : ''}> active</label>
       <span class="spacer"></span><button class="btn small ghost danger" type="button" data-remove="${i}">Remove</button></div>
     <div style="margin-top:10px"><b class="small">Type of job</b>
@@ -25,9 +29,9 @@ function targetBox(t, i) {
             : r.id === 'any' ? html`<span class="hint">e.g. a software engineer looking for a mini-job also gets waiter, shop and warehouse jobs. The AI checks hours, distance, language and licence instead of your field.</span>`
             : html`<input type="text" name="t_titles" value="${t.roles.titles.join(', ')}" placeholder="e.g. Waiter, Barista, Receptionist" style="margin-top:6px">`}</span></label>`)}
       </div></div>
-    <details style="margin-top:10px"><summary class="small">Different place or salary for this search (optional)</summary>
+    <details style="margin-top:10px" ${places ? 'open' : ''}><summary class="small">Different places or salary for this search (optional)</summary>
       <div class="form-grid" style="margin-top:8px">
-        <label class="field">City<input type="text" name="t_city" value="${(t.location && t.location.city) || ''}" placeholder="same as where I live"></label>
+        <label class="field">Cities or regions <span class="hint">separate with commas</span><input type="text" name="t_city" value="${places}" placeholder="same as in Where, e.g. Berlin, Sachsen"></label>
         <label class="field">Radius (km)<input type="number" name="t_radius" min="0" max="500" value="${(t.location && t.location.radius_km) || ''}"></label>
         <label class="field">Minimum salary<input type="text" name="t_salary" value="${t.min_salary || ''}" placeholder="e.g. 12 €/h"></label>
       </div></details>
@@ -60,22 +64,33 @@ export function readTargets(root, profile) {
     const t = profile.targets[i];
     if (!t) return;
     t.name = $('[name=t_name]', box).value.trim();
+    t.name_auto = !t.name;
     t.active = $('[name=t_active]', box).checked;
     t.job_types = $$('[name=t_types]:checked', box).map((c) => c.value);
     t.roles = { scope: ($(`[name=t_scope_${i}]:checked`, box) || {}).value || 'cv', titles: ($('[name=t_titles]', box).value || '').split(',').map((s) => s.trim()).filter(Boolean) };
-    const city = $('[name=t_city]', box).value.trim();
+    const places = splitList($('[name=t_city]', box).value);
     const radius = Number($('[name=t_radius]', box).value) || null;
-    t.location = city || radius ? { city, radius_km: radius } : null;
+    t.location = places.length || radius ? { city: places[0] || '', places, radius_km: radius } : null;
     t.min_salary = $('[name=t_salary]', box).value.trim();
   });
 }
 
 // ---- where I live ------------------------------------------------------------------------------
+// "Berlin, Leipzig; Sachsen" → ["Berlin", "Leipzig", "Sachsen"]
+export function splitList(v) {
+  const seen = new Set();
+  return String(v || '').split(/[,;\n]/).map((s) => s.trim()).filter((s) => s && !seen.has(s.toLowerCase()) && seen.add(s.toLowerCase()));
+}
+
 export function locationSection(p) {
   const l = p.location;
   return html`<div class="form-grid">
-      <label class="field">City / town *<input type="text" name="l_city" value="${l.city}" placeholder="e.g. Rimini"></label>
-      <label class="field">Country *<input type="text" name="l_country" value="${l.country}" placeholder="e.g. Italy"></label>
+      <label class="field">City / town where you live *<input type="text" name="l_city" value="${l.city}" placeholder="e.g. Leipzig"></label>
+      <label class="field">Country *<input type="text" name="l_country" value="${l.country}" placeholder="e.g. Germany"></label>
+    </div>
+    <label class="field" style="margin-top:12px">Search for jobs in <span class="hint">cities or regions, separated by commas; empty = around where you live</span>
+      <input type="text" name="l_places" value="${(l.places || []).join(', ')}" placeholder="e.g. Berlin, Leipzig, Sachsen, Niedersachsen, Nordrhein-Westfalen"></label>
+    <div class="form-grid" style="margin-top:12px">
       <label class="field">How far can you travel? <span class="hint"><output id="r_out">${l.radius_km}</output> km</span>
         <input type="range" name="l_radius" min="0" max="150" step="5" value="${l.radius_km}"></label>
     </div>
@@ -92,6 +107,7 @@ export function bindLocation(root) {
 
 export function readLocation(root, p) {
   p.location.city = $('[name=l_city]', root).value.trim();
+  p.location.places = splitList($('[name=l_places]', root).value);
   p.location.country = $('[name=l_country]', root).value.trim();
   p.location.radius_km = Number($('[name=l_radius]', root).value) || 0;
   p.location.remote = ($('[name=l_remote]:checked', root) || {}).value || 'also';
@@ -164,6 +180,8 @@ export function applySection(p) {
     </div>
     <div class="form-grid" style="margin-top:12px">
       <label class="field">Most applications per day<input type="number" name="ap_cap" min="1" max="100" value="${a.daily_cap}"></label>
+      <label class="field">Which CV to send<select name="ap_cv">
+          ${[['tailored', 'A CV tailored to each job (recommended)'], ['original', 'My own CV, exactly as I uploaded it']].map(([v, l]) => html`<option value="${v}" ${(a.cv_choice || 'tailored') === v ? 'selected' : ''}>${l}</option>`)}</select></label>
       <label class="field">Attach my certificates<select name="ap_attach">
         ${[['country_default', 'As usual in that country'], ['always', 'Always (all marked documents)'], ['never', 'Never, CV and letter only']].map(([v, l]) => html`<option value="${v}" ${a.attachments === v ? 'selected' : ''}>${l}</option>`)}</select></label>
     </div>
@@ -192,6 +210,7 @@ export function readApply(root, p) {
   p.applying.min_fit = Number($('[name=ap_minfit]', root).value);
   p.applying.proxy_wait_seconds = Number($('[name=ap_wait]', root).value);
   p.applying.attachments = $('[name=ap_attach]', root).value;
+  p.applying.cv_choice = $('[name=ap_cv]', root).value;
   p.applying.answers = {
     notice_period: $('[name=ans_notice]', root).value.trim(),
     salary_expectation: $('[name=ans_salary]', root).value.trim(),

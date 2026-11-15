@@ -8,6 +8,14 @@ description: Makes a CV tailored to one job on the board, in the job's language,
 Follow `AGENTS.md`. Tailoring means **choosing and wording**, never adding: every skill, number, tool, title and
 certificate must come from the user's CV, documents, profile or notes on the ticket.
 
+**Truth rules.** The job ad decides the order and the words, never the content. A skill or tool the ad asks for that the
+user's data does not show is left out, not added "because it fits". Never add a job, employer, date, degree,
+certificate or language, never raise a level, never turn "used" into "led". Leaving a gap is fine. The fact check in
+step 5 and `cv render` refuse anything that is not in the user's data (the ad does not count there).
+
+If the profile says `CV to send: the user's own CV as uploaded` (`applying.cv_choice: original`) or the ticket's
+instructions say to send the CV unchanged, do not tailor: run `node tools/hunt.js cv use-original --ticket <KEY>` and stop.
+
 1. Read the job: `node tools/hunt.js show <KEY> --posting` (follow its `INSTRUCTIONS FROM THE USER`, if any). Note the language of the ad, the must-haves, the
    nice-to-haves and the exact words the ad uses for them. Read the notes on the ticket: they are facts and wishes
    from the user.
@@ -15,6 +23,8 @@ certificate must come from the user's CV, documents, profile or notes on the tic
    documents (`docs list`, `docs text <id>`).
 3. Check the custom of the job's country in `agent/skills/cv/countries.md`.
 4. Write the changes for this job to `<workspace>/tmp/<KEY>_cv.json`:
+   Write the summary and bullets the way `agent/skills/cover-letter/style.md` ("Sound like the user") says: start
+   from the user's own sentences in their CV and change as little as needed; plain words, no clichés, no em dashes.
    ```json
    { "title": "the ad's job title if it truthfully fits the user",
      "summary": "2–3 sentences that connect the user's real strengths to this job",
@@ -27,10 +37,13 @@ certificate must come from the user's CV, documents, profile or notes on the tic
    (languages, education, certificates, the header lines).
    If the ad's language differs from the structured CV's language, instead write a complete translated and tailored
    CV to `<ticket folder>/docs/cv_<lang>.json` (same format as `cv show`) and render with `--cv` (no `--overrides`).
-5. Fact check: `node tools/hunt.js factcheck <your json> --ticket <KEY>`. Fix every item it lists.
+5. Fact check: `node tools/hunt.js factcheck <your json> --ticket <KEY>`. Fix every item it lists (remove it, or use
+   the user's own words). It also prints style hints: rewrite those lines. If you believe the user really has a skill
+   it flags, ask (`hunt ask`); only when they say yes, record it (`hunt note <KEY> "The user confirmed: …"`).
 6. Render: `node tools/hunt.js cv render --ticket <KEY> --lang <lang> --overrides <workspace>/tmp/<KEY>_cv.json`
    (or `--cv <file>`), plus `--photo yes` / `--birth-date` / `--nationality` only where the country expects it.
    The design and the photo follow the user's own choice on the Profile page (`cv.template`, `cv.photo`; "always"
    and "never" win over `--photo`). Pass `--template <id>` only when the user asks for another design for this job.
    Keep it to one page for entry-level and side jobs, two pages at most otherwise; shorten and render again if needed.
-7. Tell the user in two lines what you emphasised and where the PDF is (the ticket's Documents tab).
+7. Tell the user in two lines what you emphasised and where the PDF is (the ticket's Documents tab), and ask them to
+   read it once and change any word that does not sound like them.

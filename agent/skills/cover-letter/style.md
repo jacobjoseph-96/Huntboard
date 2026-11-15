@@ -34,6 +34,22 @@ Two to four sentences each; about 200–300 words in all, never more than one pa
   Only when the user or the ad asks for one, add `"attachments_line": "<the line>"` to the letter.
 - Salary only if the ad asks for it and the profile has an expectation.
 
+## Sound like the user, not like an AI
+Recruiters and some screening tools look for text that reads as machine-written; a letter that sounds like a person
+gets read. The user's own CV is the best guide to their voice.
+- **Start from the user's own words.** Reuse their phrases from the CV and the documents; change only what the job
+  needs. Their way of saying it is the right way.
+- **Plain, concrete words.** Name the thing (the machine, the dish, the program, the customer). No "leverage",
+  "passionate", "dynamic", "seamless", "spearheaded", "testament", "fast-paced", "Moreover/Furthermore", and the same
+  in other languages ("Hiermit bewerbe ich mich", "mit großem Interesse", "Con la presente"…).
+- **Mix sentence lengths.** Some short. Some longer, with the detail that proves the point. Do not start three
+  sentences the same way.
+- **No em dashes (—)**, no lists of three adjectives, no rhetorical questions, no emoji, no bold text in a letter.
+- **Small, human details** from the user's data (where they worked, what they handled, for whom) beat big claims.
+- `hunt factcheck` prints style hints for these; rewrite every line it names. Huntboard also removes invisible
+  characters (zero-width spaces, odd spaces) from every document, so online forms read them cleanly.
+- Ask the user to read it once and change what does not sound like them: a few words in their own voice make it theirs.
+
 ## The swap test (before you render)
 Put a competitor's name where the company's name stands. If the letter still reads true, it is not ready:
 paragraphs 1 and 2 are too general. Rewrite them until the letter would be wrong for anyone else.

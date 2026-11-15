@@ -1,4 +1,4 @@
-import { app, api, html, raw, md, toast, modal, moveTicket, interviewDialog, startRun, hasSkill, fitBadge, fitClass, fitText, statusLabel, stageLabel, when, ago, fileUrl, safeUrl, $, $$ } from '../app.js';
+import { app, api, html, raw, md, toast, modal, confirmDialog, moveTicket, interviewDialog, startRun, hasSkill, fitBadge, fitClass, fitText, statusLabel, stageLabel, when, ago, fileUrl, safeUrl, $, $$ } from '../app.js';
 
 let mainEl = null;
 let key = null;
@@ -8,6 +8,7 @@ let data = null;
 const ACTIONS = [
   ['tailor', 'Tailor my CV'],
   ['cover-letter', 'Write a cover letter'],
+  ['email', 'Write an e-mail'],
   ['apply', 'Apply'],
   ['interview-prep', 'Prepare for the interview'],
   ['interview-debrief', 'Debrief the interview'],
@@ -131,8 +132,9 @@ function draw() {
 
     ${t.needs ? html`<div class="notice warn row" style="margin-bottom:12px"><span><b>Needs you:</b> ${t.needs.text}</span><span class="spacer"></span><button class="btn small" id="needs-tell">Tell the AI</button><button class="btn small" id="needs-done">I did it</button></div>` : ''}
     <div class="row" style="margin-bottom:16px">
-      ${ACTIONS.map(([skill, label]) => html`<button class="btn ${skill === suggested(t) ? 'primary' : ''}" data-skill="${skill}" ${hasSkill(skill) ? '' : raw('disabled title="Coming in a later version"')}>${label}</button>`)}
+      ${ACTIONS.map(([skill, label]) => html`${skill === 'cover-letter' ? html`<button class="btn" id="original-cv" type="button" title="Send the CV you uploaded, exactly as it is (no tailoring)">Use my CV as it is</button>` : ''}<button class="btn ${skill === suggested(t) ? 'primary' : ''}" data-skill="${skill}" ${hasSkill(skill) ? '' : raw('disabled title="Coming in a later version"')}>${label}</button>`)}
     </div>
+    ${t.documents && t.documents.cv ? html`<p class="small muted" style="margin:-8px 0 14px">CV for this job: <b>${t.documents.cv_source === 'original' ? 'your own CV, as uploaded' : 'tailored to this job'}</b> (${t.documents.cv.replace(/^docs\//, '')})</p>` : ''}
 
     ${instructionsCard(t)}
     <div class="ticket-layout">
@@ -171,6 +173,16 @@ function draw() {
   const nd = $('#needs-done', mainEl);
   if (nd) nd.addEventListener('click', async () => { await api('PUT', `/api/tickets/${t.key}/needs`, { text: null }).catch((err) => toast(err.message, true)); await reload(); });
   $$('[data-skill]', mainEl).forEach((b) => b.addEventListener('click', () => startRun(b.dataset.skill, { ticket: t.key })));
+  $('#original-cv', mainEl).addEventListener('click', async () => {
+    if (t.documents && t.documents.cv && t.documents.cv_source !== 'original'
+      && !(await confirmDialog('Use your own CV?', 'This job has a tailored CV. From now on your uploaded CV, unchanged, is the CV for this job (the tailored file stays in Documents).', 'Use my CV'))) return;
+    try {
+      await api('POST', `/api/tickets/${encodeURIComponent(t.key)}/original-cv`);
+      toast('Your own CV is the CV for this job now.');
+      tab = 'docs';
+      await reload();
+    } catch (err) { toast(err.message, true); }
+  });
   $$('[data-tab]', mainEl).forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab; draw(); }));
   $$('[data-edit]', mainEl).forEach((el) => {
     const go = () => editField(el.dataset.edit);
@@ -206,7 +218,7 @@ function tabBody(t) {
   if (tab === 'docs') {
     const files = data.files.filter((f) => f.path.startsWith('docs/'));
     return html`${files.length ? html`<ul class="files">${files.map((f) => html`<li><span>📄</span><a href="${fileUrl(t.key, f.path)}" target="_blank" rel="noopener">${f.path.slice(5)}</a><span class="spacer"></span><span class="small muted">${ago(f.modified)}</span><a class="btn small ghost" href="${fileUrl(t.key, f.path, true)}">Download</a>${data.dir ? fileTools(absPath(data.dir, f.path), { key: t.key, path: f.path }) : ''}</li>`)}</ul>`
-      : html`<div class="empty">No documents for this job yet. Use "Tailor my CV" or "Write a cover letter".</div>`}`.s;
+      : html`<div class="empty">No documents for this job yet. Use "Tailor my CV", "Use my CV as it is", "Write a cover letter" or "Write an e-mail".</div>`}`.s;
   }
   if (tab === 'interview') {
     const rounds = t.interview.rounds || [];

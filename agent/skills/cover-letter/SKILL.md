@@ -6,6 +6,9 @@ description: Writes a one-page cover letter for one job on the board, in the job
 # Write a cover letter
 
 Follow `AGENTS.md`: only facts from the CV, documents, profile, ticket notes and the ad.
+**Truth rules:** the ad tells you what the company wants, the user's data tells you what the user has. Never claim a
+skill, tool, number or experience of the ad as the user's; never invent a project, a result or a reason to apply that
+the user did not give. `letter render` refuses facts that are in neither.
 
 1. Read the job (`node tools/hunt.js show <KEY> --posting` (follow its `INSTRUCTIONS FROM THE USER`, if any)), the user (`cv show`, `profile`) and the country's style
    in `agent/skills/cv/countries.md`. Use the ad's language.
@@ -30,7 +33,9 @@ Follow `AGENTS.md`: only facts from the CV, documents, profile, ticket notes and
    (`"bullets": [{ "label": "…", "text": "…" }]`, shown after paragraph 1) is only for an ad or a country that
    wants one; normally leave it out.
 4. Do the swap test from `style.md`: if the letter would also fit a competitor, rewrite paragraphs 1 and 2.
-5. Fact check: `node tools/hunt.js factcheck <workspace>/tmp/<KEY>_letter.json --ticket <KEY>`; fix every item.
+5. Fact check: `node tools/hunt.js factcheck <workspace>/tmp/<KEY>_letter.json --ticket <KEY>`; fix every item and
+   rewrite the lines its style hints point at (`style.md`, "Sound like the user").
 6. Render: `node tools/hunt.js letter render <workspace>/tmp/<KEY>_letter.json --ticket <KEY> --lang <lang>`.
    It must be one page; shorten and render again if not.
-7. Tell the user where it is and how to apply (link or e-mail address from the ad).
+7. Tell the user where it is and how to apply (link or e-mail address from the ad), and ask them to read it once and
+   change any word that does not sound like them.
