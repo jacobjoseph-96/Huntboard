@@ -38,7 +38,7 @@ function payload() {
   const out = {};
   if (SECTIONS[tab]) out.profile = Object.fromEntries(SECTIONS[tab].map((k) => [k, profile[k]]));
   if (tab === 'lang' && $('[name=fu_days]', mainEl)) out.settings = { followup_days: Number($('[name=fu_days]', mainEl).value) || 10 };
-  if (tab === 'ai' && $('[name=tool]', mainEl)) out.settings = readAi($('#pane', mainEl));
+  if (tab === 'ai' && $('[name=tool]', mainEl)) out.settings = { ai: readAi($('#pane', mainEl)) };
   return out;
 }
 
@@ -198,7 +198,7 @@ async function aiPane() {
           ${t.verified ? '' : html`<span class="badge info">experimental</span>`}
           ${t.runnable ? '' : html`<span class="hint">Install: <span class="mono">${t.install}</span></span>`}</span></span></label>`)}</div>
     <label class="check" style="margin-top:12px"><input type="checkbox" name="auto_prep" ${s.ai.auto_prepare_interviews ? 'checked' : ''}> Start interview preparation automatically when I move a job to "Interview"</label>
-    <label class="check" style="margin-top:8px"><input type="checkbox" name="full" ${(s.ai.full_access || {})[s.ai.tool] ? 'checked' : ''}> Let the AI work without asking <span class="hint">(needed by some tools for browsing and forms; the AI can then run any command in this folder)</span></label>
+    <label class="check" style="margin-top:8px"><input type="checkbox" name="full" ${fullAccessOn(s) ? 'checked' : ''}> Let the AI work without asking <span class="hint">(needed by some tools for browsing and forms; the AI can then run any command in this folder)</span></label>
     <div class="row" style="margin-top:16px"><button class="btn" id="test-ai" type="button">Test the AI</button>
       <span class="hint">The first time, sign in once: open a terminal in the Huntboard folder and start the tool (e.g. <span class="mono">${(tool || tools[0] || {}).sign_in || ''}</span>).</span></div>
     <div id="test-out" style="margin-top:10px"></div>
@@ -221,10 +221,16 @@ async function aiPane() {
   </div>`.s;
 }
 
+function fullAccessOn(s) {
+  const fa = s.ai.full_access || {};
+  return Boolean(s.ai.tool in fa ? fa[s.ai.tool] : fa['']);
+}
+
 function readAi(pane) {
   const tool = ($('[name=tool]:checked', pane) || {}).value || '';
   const full = { ...(app.state.settings.ai.full_access || {}) };
-  if (tool) full[tool] = $('[name=full]', pane).checked;
+  // No tool chosen yet: keep the choice under '' so it is not lost (used for the tool chosen later).
+  full[tool] = $('[name=full]', pane).checked;
   const models = { light: $('[name=m_light]', pane).value.trim(), standard: $('[name=m_standard]', pane).value.trim(), strong: $('[name=m_strong]', pane).value.trim() };
   const tiers = app.meta.model_tiers;
   const taskTiers = {};
