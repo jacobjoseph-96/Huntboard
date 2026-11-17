@@ -90,7 +90,7 @@ function summary(run) {
   return {
     id: run.id, kind: run.kind, skill: run.skill, title: run.title, proxy: Boolean(run.proxy), message: run.kind === 'chat' ? run.message : undefined, ticket: run.ticket, status: run.status, tool: run.tool,
     tool_name: run.tool_name, created_at: run.created_at, started_at: run.started_at, finished_at: run.finished_at,
-    steps: run.steps.slice(-8), step_count: run.steps.length, error: run.error, error_kind: run.error_kind,
+    steps: run.steps.slice(-8), step_count: run.steps.length, error: run.error, error_kind: run.error_kind, cancel_reason: run.cancel_reason, resume_at: run.resume_at,
     result_text: run.status === 'running' ? '' : run.result_text, warnings: (run.warnings || []).slice(-3), denied: run.denied,
   };
 }

@@ -227,18 +227,18 @@ export async function startRun(skill, opts = {}) {
 
 function renderRunbar() {
   const bar = $('#runbar');
-  const runs = [...app.runs.values()].filter((r) => r.status === 'running' || r.status === 'queued' || (r.finished_at && Date.now() - Date.parse(r.finished_at) < 20000 && !r._dismissed));
+  const runs = [...app.runs.values()].filter((r) => r.status === 'running' || r.status === 'queued' || r.status === 'waiting_limit' || (r.finished_at && Date.now() - Date.parse(r.finished_at) < 20000 && !r._dismissed));
   const r = runs.sort((a, b) => (a.status === 'running' ? -1 : 1) - (b.status === 'running' ? -1 : 1))[0];
   if (!r || app.pageName === 'activity') { bar.hidden = true; return; }
   bar.hidden = false;
-  const live = r.status === 'running' || r.status === 'queued';
+  const live = r.status === 'running' || r.status === 'queued' || r.status === 'waiting_limit';
   bar.innerHTML = html`<div class="row">
       ${live ? html`<span class="spinner"></span>` : html`<span class="badge ${r.status === 'done' ? 'ok' : 'bad'}">${r.status === 'done' ? 'Done' : r.status}</span>`}
       <span class="title">${r.title}</span><span class="spacer"></span>
       <a class="btn small ghost" href="#/activity?run=${r.id}">Details</a>
       ${live ? html`<button class="btn small" data-cancel="${r.id}">Stop</button>` : html`<button class="btn small ghost" data-dismiss="${r.id}" aria-label="Close">✕</button>`}
     </div>
-    ${live ? html`<ul class="steps">${(r.steps || []).slice(-3).map((s) => html`<li>${s.text}</li>`)}${r.status === 'queued' ? html`<li>Waiting for the previous task to finish…</li>` : ''}</ul>` : ''}
+    ${live ? html`<ul class="steps">${(r.steps || []).slice(-3).map((s) => html`<li>${s.text}</li>`)}${r.status === 'queued' ? html`<li>Waiting for the previous task to finish…</li>` : ''}${r.status === 'waiting_limit' ? html`<li>${r.error || 'Waiting for the AI usage limit to reset…'}</li>` : ''}</ul>` : ''}
     ${!live && r.error ? html`<div class="small" style="margin-top:6px;color:var(--danger)">${r.error}</div>` : ''}
     ${!live && r.result_text ? html`<div class="small md" style="margin-top:6px;max-height:140px;overflow:auto">${raw(md(r.result_text))}</div>` : ''}`.s;
 }

@@ -3,7 +3,7 @@ import { api, html, raw, md, ago, when, $$ } from '../app.js';
 let mainEl = null;
 let open = null;
 
-const BADGE = { done: 'ok', failed: 'bad', cancelled: '', interrupted: 'warn', running: 'info', queued: '' };
+const BADGE = { done: 'ok', failed: 'bad', cancelled: '', interrupted: 'warn', running: 'info', queued: '', waiting_limit: 'warn' };
 
 // A finished run's badge. "done" only says the AI tool exited: a send run says how many rows went out, and a run the
 // AI tool's safety check stopped somewhere says so.
@@ -14,7 +14,7 @@ function badge(r) {
     return html`<span class="badge warn">${o.sent ? `sent ${o.sent} of ${o.total}` : 'not sent'}</span>`;
   }
   if (r.status === 'done' && r.denied && r.denied.length) return html`<span class="badge warn">done, blocked</span>`;
-  return html`<span class="badge ${BADGE[r.status] || ''}">${r.status}</span>`;
+  return html`<span class="badge ${BADGE[r.status] || ''}">${r.status === 'waiting_limit' ? 'waiting for AI limit' : r.status}</span>`;
 }
 
 const JT = false;
@@ -31,11 +31,11 @@ export async function render(main, { query } = {}) {
     <div class="card">${runs.length ? runs.map((r) => html`<div class="inbox-item" style="cursor:pointer" data-open="${r.id}">
         ${r.status === 'running' ? html`<span class="spinner"></span>` : badge(r)}
         <div class="body"><b>${r.title}</b>${r.proxy ? html` <span class="badge warn">fully automatic</span>` : ''}<div class="small muted">${r.tool_name || r.tool || ''} · ${ago(r.created_at)}${r.ticket ? ` · ${r.ticket}` : ''}</div></div>
-        ${r.status === 'running' || r.status === 'queued' ? html`<button class="btn small" data-cancel="${r.id}">Stop</button>` : ''}
+        ${r.status === 'running' || r.status === 'queued' || r.status === 'waiting_limit' ? html`<button class="btn small" data-cancel="${r.id}">Stop</button>` : ''}
       </div>
       ${detail && detail.id === r.id ? html`<div style="padding:4px 0 14px 46px">
         <p class="small muted">Started ${when(detail.started_at)}${detail.finished_at ? ` · finished ${when(detail.finished_at)}` : ''}</p>
-        ${detail.error ? html`<div class="notice bad small">${detail.error}</div>` : ''}
+        ${detail.error ? html`<div class="notice ${detail.status === 'waiting_limit' ? 'warn' : 'bad'} small">${detail.error}</div>` : ''}
         ${detail.outcome && detail.outcome.total ? html`<div class="notice ${detail.outcome.sent === detail.outcome.total ? 'ok' : 'warn'} small"><b>${detail.outcome.sent} of ${detail.outcome.total} sent.</b><ul>${detail.outcome.rows.map((o) => html`<li>${o.key ? html`<a href="#/ticket/${o.key}">${o.sheet} ${o.row}</a>` : `${o.sheet} ${o.row}`}${o.company ? ` ${o.company}` : ''}: ${o.state === 'sent' ? 'sent' : o.state === 'removed' ? 'removed from AI_found' : `not sent: ${o.why}`}</li>`)}</ul></div>` : ''}
         ${detail.status === 'done' && detail.denied && detail.denied.length ? html`<div class="notice warn small">The AI tool's own safety check blocked ${detail.denied.length} action(s): ${[...new Set(detail.denied)].map(toolLabel).join(', ')}. ${JT ? 'Write what you allow in the ticket box "Instructions for the AI" box, then send again: the agent gets it as your permission.' : 'Write what you allow in the ticket box "Instructions for the AI" box, then try again.'}</div>` : ''}
         ${detail.result_text ? html`<div class="md" style="margin:8px 0">${raw(md(detail.result_text))}</div>` : ''}

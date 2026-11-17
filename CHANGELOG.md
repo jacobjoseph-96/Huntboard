@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1
+
+- **The AI usage limit no longer loses work.** When the AI tool says its usage limit is reached, the task waits for
+  the reset (shown as "waiting for AI limit" with the time it continues) and then carries on in the same AI session
+  where it stopped, instead of failing. While the limit lasts, other queued tasks wait too rather than failing one
+  after another. Gives up after 3 waits on the same task.
+- **Stop works on a waiting task**: it cancels it for good.
+
 ## 0.2.0
 
 - **Update with one click, keep everything.** Settings → Updates (or `update.bat` / `sh update.sh` /
