@@ -155,14 +155,14 @@ function draw() {
       </aside>
     </div></div>`.s;
 
-  $('#move', mainEl).addEventListener('change', async (e) => {
+  $('#move', mainEl)?.addEventListener('change', async (e) => {
     try {
       const out = await moveTicket(t, e.target.value);
       if (out) { toast(`Moved to ${statusLabel(out.status)}`); await reload(); } else e.target.value = t.status;
     } catch (err) { toast(err.message, true); e.target.value = t.status; }
   });
-  $('#delete', mainEl).addEventListener('click', () => deleteDialog(t));
-  $('#instr-edit', mainEl).addEventListener('click', () => instructionsDialog(t));
+  $('#delete', mainEl)?.addEventListener('click', () => deleteDialog(t));
+  $('#instr-edit', mainEl)?.addEventListener('click', () => instructionsDialog(t));
   const ic = $('#instr-clear', mainEl);
   if (ic) ic.addEventListener('click', async () => {
     await api('PUT', `/api/tickets/${t.key}/instructions`, { text: null }).catch((err) => toast(err.message, true));
@@ -173,7 +173,7 @@ function draw() {
   const nd = $('#needs-done', mainEl);
   if (nd) nd.addEventListener('click', async () => { await api('PUT', `/api/tickets/${t.key}/needs`, { text: null }).catch((err) => toast(err.message, true)); await reload(); });
   $$('[data-skill]', mainEl).forEach((b) => b.addEventListener('click', () => startRun(b.dataset.skill, { ticket: t.key })));
-  $('#original-cv', mainEl).addEventListener('click', async () => {
+  $('#original-cv', mainEl)?.addEventListener('click', async () => {
     if (t.documents && t.documents.cv && t.documents.cv_source !== 'original'
       && !(await confirmDialog('Use your own CV?', 'This job has a tailored CV. From now on your uploaded CV, unchanged, is the CV for this job (the tailored file stays in Documents).', 'Use my CV'))) return;
     try {
