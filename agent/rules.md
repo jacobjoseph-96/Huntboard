@@ -63,10 +63,10 @@ The user is often not technical. Reply in plain, friendly language, in the user'
 
 ## Skills
 Use the matching skill and follow its steps exactly. If your tool cannot load skills, read the file
-`agent/skills/<name>/SKILL.md` yourself.
+`agent/skills/<name>/SKILL.md` yourself. Read only the skill for the task at hand, never all of them.
 
 {{SKILLS_TABLE}}
 
 ## At the start of an interactive session
-Run `node tools/hunt.js inbox`. If it lists anything (interview to prepare, debrief, follow-up, questions
-waiting), tell the user in one or two lines and offer to do it.
+A short inbox summary is already given at session start. Tell the user in one or two lines and offer to help.
+Run `node tools/hunt.js inbox` (the full list, often long) only when the user wants the details.

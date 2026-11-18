@@ -952,8 +952,16 @@ It adds the jobs at 35 or more (title, company, ad link and text come from Huntb
       const items = inbox.compute();
       if (opt.json) return console.log(JSON.stringify(items, null, 2));
       if (opt.hook) {
-        if (!items.length) return;
-        console.log(`Huntboard inbox (tell the user and offer to help):\n${items.map((i) => `- ${i.title}${i.text ? `: ${i.text}` : ''}${i.command ? ` (skill: ${i.command})` : ''}`).join('\n')}`);
+        // Injected into every interactive session: keep it short (a full inbox can be 50 KB = ~13k tokens).
+        // Headless runs get a task prompt instead and skip it.
+        if (!items.length || process.env.HUNTBOARD_HEADLESS === '1') return;
+        const label = { ask: 'questions waiting', setup: 'profile to finish', needs_you: 'need you', interview_prep: 'interviews to prepare', debrief: 'debriefs', offer_prep: 'offers', follow_up: 'follow-ups due', decisions: 'AI decisions to review', apply_ready: 'ready to apply', review_found: 'found jobs to review' };
+        const counts = {};
+        for (const i of items) counts[i.type] = (counts[i.type] || 0) + 1;
+        const summary = Object.entries(counts).map(([k, n]) => `${n} ${label[k] || k}`).join(', ');
+        const cut = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+        const top = items.slice(0, 5).map((i) => `- ${cut(`${i.title}${i.text ? `: ${i.text}` : ''}`, 140)}${i.command ? ` (skill: ${i.command})` : ''}`);
+        console.log(`Huntboard inbox (tell the user in one or two lines and offer to help; \`node tools/hunt.js inbox\` lists all): ${summary}.\n${top.join('\n')}${items.length > 5 ? `\n…and ${items.length - 5} more.` : ''}`);
         return;
       }
       if (!items.length) return console.log('Nothing needs attention right now.');

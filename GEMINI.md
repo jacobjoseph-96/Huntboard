@@ -65,7 +65,7 @@ The user is often not technical. Reply in plain, friendly language, in the user'
 
 ## Skills
 Use the matching skill and follow its steps exactly. If your tool cannot load skills, read the file
-`agent/skills/<name>/SKILL.md` yourself.
+`agent/skills/<name>/SKILL.md` yourself. Read only the skill for the task at hand, never all of them.
 
 | Skill | What it does |
 |---|---|
@@ -83,5 +83,5 @@ Use the matching skill and follow its steps exactly. If your tool cannot load sk
 | `tailor` | Makes a CV tailored to one job on the board, in the job's language, so the most relevant real experience is first and uses the ad's words. |
 
 ## At the start of an interactive session
-Run `node tools/hunt.js inbox`. If it lists anything (interview to prepare, debrief, follow-up, questions
-waiting), tell the user in one or two lines and offer to do it.
+A short inbox summary is already given at session start. Tell the user in one or two lines and offer to help.
+Run `node tools/hunt.js inbox` (the full list, often long) only when the user wants the details.
