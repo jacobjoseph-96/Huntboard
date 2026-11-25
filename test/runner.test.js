@@ -76,7 +76,7 @@ test('a run that hits the usage limit waits for the reset and continues its own 
   profileLib.saveSettings({ ai: { tool: 'mock' } });
   limitUntil.mock = 0;
   const slack = LIMIT.slackMs;
-  LIMIT.slackMs = 0;
+  LIMIT.slackMs = 300; // > 0 so the wait always ends in the future, even on a slow machine
   assert.strictEqual(classifyError("You've hit your session limit · resets 8:10pm (Europe/Berlin)"), 'limit');
   const runner = mockRunner(['--limit']);
   const seen = [];

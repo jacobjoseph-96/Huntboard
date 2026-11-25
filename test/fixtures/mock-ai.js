@@ -13,7 +13,7 @@ if (process.argv.includes('--ask')) {
 }
 // --limit: the usage limit, as Claude reports it, unless this is the resumed session (--resume): then it finishes.
 if (process.argv.includes('--limit') && !process.argv.includes('--resume')) {
-  out({ type: 'rate_limit_event', rate_limit_info: { status: 'rejected', resetsAt: Math.floor(Date.now() / 1000) + 1 } });
+  out({ type: 'rate_limit_event', rate_limit_info: { status: 'rejected', resetsAt: Math.ceil(Date.now() / 1000) + 1 } });
   out({ type: 'result', subtype: 'success', is_error: true, api_error_status: 429, result: "You've hit your session limit · resets 8:10pm", session_id: 'mock-session-1' });
   process.exit(1);
 }
