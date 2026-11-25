@@ -2,7 +2,7 @@ import { app, api, html, raw, toast, startRun, hasSkill, refreshState, $, $$ } f
 import * as F from './forms.js';
 import { documentsBlock, bindDocuments } from './profile.js';
 
-const STEPS = ['Welcome', 'Your AI', 'Documents', 'Where', 'What jobs', 'About you', 'Applying', 'Done'];
+const STEPS = ['Welcome', 'Your AI', 'Your browser', 'Documents', 'Where', 'What jobs', 'About you', 'Applying', 'Done'];
 let step = 0;
 let profile = null;
 let mainEl = null;
@@ -11,6 +11,7 @@ export async function render(main) {
   mainEl = main;
   await refreshState();
   if (!profile) profile = JSON.parse(JSON.stringify(app.state.profile));
+  if (STEPS[step] === 'Your browser') app.browsers = await api('GET', '/api/browsers').catch(() => null);
   main.innerHTML = html`<div class="page"><div class="wizard">
     <div class="row"><img src="/assets/logo/huntboard-mark.svg" alt="" width="40" height="40"><h1 style="margin:0">Set up Huntboard</h1><span class="spacer"></span>
       <a class="small" href="#/home" id="skip">Skip for now</a></div>
@@ -42,6 +43,11 @@ function body() {
           <span><b>${t.name}</b> ${t.runnable ? html`<span class="badge ok">installed</span>` : html`<span class="badge">not installed</span> <span class="hint mono">${t.install}</span>`} ${t.verified ? '' : html`<span class="badge info">experimental</span>`}</span></label>`)}</div>
         <p class="hint" style="margin-top:10px">You can change this later in Settings → AI tool, and test it there.</p>`.s;
     }
+    case 'Your browser':
+      return html`<h2>Which browser should Huntboard use?</h2>
+        <p class="muted">Huntboard opens its window in this browser, makes your PDFs with it, and the AI uses it to search job boards and fill in application forms. These browsers are installed on this computer:</p>
+        ${app.browsers ? raw(F.browserSection(app.browsers)) : html`<p class="muted">Could not check the installed browsers.</p>`}
+        <p class="hint" style="margin-top:10px">You can change this later in Settings → AI &amp; browser.</p>`.s;
     case 'Documents':
       return html`<h2>Your CV and documents</h2>${raw(documentsBlock())}
         ${hasSkill('setup') ? html`<div class="notice" style="margin-top:12px">After uploading, the AI can read your CV and fill in the next steps for you.
@@ -92,6 +98,12 @@ async function saveStep() {
     if (name === 'Your AI') {
       const tool = ($('[name=tool]:checked', root) || {}).value;
       if (tool) await api('PUT', '/api/settings', { ai: { tool } });
+      await refreshState();
+      return true;
+    }
+    if (name === 'Your browser') {
+      const choice = F.readBrowser(root);
+      if (choice) await api('PUT', '/api/settings', { browser: { choice } });
       await refreshState();
       return true;
     }

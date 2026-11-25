@@ -253,3 +253,21 @@ export function readLanguage(root, p) {
 }
 
 export { raw };
+
+// ---- browser ---------------------------------------------------------------------------------------
+// info = GET /api/browsers. Lists every browser found on this computer; only Chromium-based ones can be chosen.
+export function browserSection(info) {
+  const found = info.browsers.filter((b) => b.installed);
+  const chosen = info.chosen || (info.current && info.current.id) || '';
+  if (!found.some((b) => b.usable)) {
+    return html`<div class="notice warn">No browser Huntboard can use was found${found.length ? html` (${found.map((b) => b.name).join(', ')} cannot be used)` : ''}.
+      Install Google Chrome, Microsoft Edge or Brave, then open this page again.</div>`.s;
+  }
+  return html`<div class="choice-cards">${found.map((b) => html`<label class="choice-card"><input type="radio" name="browser" value="${b.id}" ${b.id === chosen ? 'checked' : ''} ${b.usable ? '' : 'disabled'}>
+      <span><b>${b.name}</b> ${b.usable ? html`<span class="badge ok">installed</span>` : html`<span class="badge">installed</span> <span class="hint">Huntboard cannot use it (it needs a Chrome-based browser)</span>`}</span></label>`)}</div>`.s;
+}
+
+export function readBrowser(root) {
+  const r = $('[name=browser]:checked', root);
+  return r ? r.value : null;
+}

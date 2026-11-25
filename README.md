@@ -66,7 +66,8 @@ folder in any of these tools and just talk to it. Details: [docs/supported-ais.m
 
 **macOS / Linux:** `sh install.sh` once, then `sh start.sh`.
 
-You need Node.js 22+, Google Chrome (or Edge / Chromium) and one AI tool. The installer helps with all three. The
+You need Node.js 22+, a Chrome-based browser (Chrome, Edge, Brave, Vivaldi or Chromium; you choose which one in the
+app) and one AI tool. The installer helps with all three. The
 first time, sign in to your AI tool once: open a terminal in the Huntboard folder and start it (for example `claude`,
 `gemini` or `agy`).
 

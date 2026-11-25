@@ -23,17 +23,15 @@ if errorlevel 1 goto node_too_old
 echo [1/4] Node.js is ready.
 
 rem ---- 2. A Chromium browser - the app window, PDFs and job boards ----
-set "HAVE_BROWSER="
-if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" set "HAVE_BROWSER=1"
-if exist "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" set "HAVE_BROWSER=1"
-if exist "%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe" set "HAVE_BROWSER=1"
-if defined HAVE_BROWSER goto browser_ok
-echo [2/4] Google Chrome is missing. Installing it...
+rem Any of Chrome, Edge, Brave, Vivaldi or Chromium will do (lib/browser.js); you pick one in the app.
+node -e "process.exit(require('./lib/browser').findChromium() ? 0 : 1)"
+if not errorlevel 1 goto browser_ok
+echo [2/4] No Chrome-based browser found (Chrome, Edge, Brave...). Installing Google Chrome...
 where winget >nul 2>nul
 if errorlevel 1 goto no_winget
 winget install -e --id Google.Chrome --accept-source-agreements --accept-package-agreements
 :browser_ok
-echo [2/4] Google Chrome is ready.
+echo [2/4] A browser is ready. You choose which one Huntboard uses when you open it.
 
 rem ---- 3. Huntboard itself ----
 echo [3/4] Installing Huntboard...

@@ -83,7 +83,8 @@ function mcpServers() {
   const src = JSON.parse(read(path.join(AGENT, 'mcp.json'))).servers;
   const out = {};
   for (const [name, s] of Object.entries(src)) {
-    const a = s.args.map((x) => x.replace('{workspace}', workspacePath()));
+    // {browser} = the browser chosen in Settings (lib/browser.js), e.g. "--browser msedge".
+    const a = s.args.flatMap((x) => (x === '{browser}' ? require('../lib/browser').mcpArgs() : [x.replace('{workspace}', workspacePath())]));
     out[name] = IS_WIN && ['npx', 'npm', 'node'].includes(s.command) && s.command !== 'node'
       ? { command: 'cmd', args: ['/c', s.command, ...a] }
       : { command: s.command, args: a };

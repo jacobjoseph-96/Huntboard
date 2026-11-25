@@ -5,7 +5,7 @@ let mainEl = null;
 let tab = 'search';
 let profile = null;
 
-const TABS = [['search', 'What I am looking for'], ['place', 'Where'], ['apply', 'Applying'], ['ai', 'AI tool'], ['lang', 'Languages & more'], ['update', 'Updates']];
+const TABS = [['search', 'What I am looking for'], ['place', 'Where'], ['apply', 'Applying'], ['ai', 'AI & browser'], ['lang', 'Languages & more'], ['update', 'Updates']];
 // The parts of the profile each tab edits: a save sends only these, so it never undoes what changed elsewhere.
 const SECTIONS = { search: ['targets'], place: ['location', 'about'], apply: ['applying'], lang: ['documents_language', 'reply_language'] };
 const clone = (v) => JSON.parse(JSON.stringify(v));
@@ -183,6 +183,7 @@ const TIER_LABEL = { light: 'Light', standard: 'Standard', strong: 'Strong' };
 
 async function aiPane() {
   app.tools = await api('GET', '/api/ai/tools');
+  app.browsers = await api('GET', '/api/browsers').catch(() => null);
   const s = app.state.settings;
   const tools = app.tools.tools;
   const tool = tools.find((t) => t.id === s.ai.tool);
@@ -218,7 +219,10 @@ async function aiPane() {
       <div class="form-grid" style="margin-top:8px">${Object.keys(tiers.tasks).map((k) => html`<label class="field">${TASK_LABEL[k] || app.meta.tasks[k] || k}
         <select name="tier_${k}">${tiers.tiers.map((t) => html`<option value="${t}" ${(ownTiers[k] || tiers.tasks[k]) === t ? 'selected' : ''}>${TIER_LABEL[t]}${tiers.tasks[k] === t ? ' (default)' : ''}</option>`)}</select></label>`)}</div>
     </details>
-  </div>`.s;
+  </div>
+  ${app.browsers ? html`<div class="card"><h2>Which browser?</h2>
+    <p class="muted">Huntboard opens its window in this browser, makes your PDFs with it, and the AI uses it to search job boards and fill in forms. These browsers are installed on this computer:</p>
+    ${F.raw(F.browserSection(app.browsers))}</div>` : ''}`.s;
 }
 
 function fullAccessOn(s) {
@@ -249,6 +253,17 @@ function bindAi(pane) {
     dirty = true;
     await flush();
     drawPane();
+  }));
+  // The browser is saved at once, not with the autosave: the AI tools' settings are written again for it.
+  $$('[name=browser]', pane).forEach((r) => r.addEventListener('change', async (e) => {
+    e.stopPropagation();
+    try {
+      await api('PUT', '/api/settings', { browser: { choice: r.value } });
+      await refreshState();
+      toast(`Huntboard now uses ${(app.browsers.browsers.find((b) => b.id === r.value) || {}).name || r.value}.`);
+    } catch (err) {
+      toast(err.message, true);
+    }
   }));
   const sug = $('#m-suggest', pane);
   if (sug) sug.addEventListener('click', () => {

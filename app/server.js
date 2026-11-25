@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const paths = require('../lib/paths');
 const { ensureDir, safeJoin } = require('../lib/fsx');
 const store = require('../lib/store');
@@ -19,7 +19,8 @@ const asks = require('../lib/ai/ask');
 const proxy = require('../lib/proxy');
 const prompts = require('../lib/ai/prompts');
 const { Runner, detectTools } = require('../lib/ai/runner');
-const { findChromium } = require('../lib/browser');
+const browsers = require('../lib/browser');
+const { findChromium } = browsers;
 const pkg = require('../package.json');
 
 const argv = process.argv.slice(2);
@@ -317,8 +318,24 @@ route('PUT', '/api/settings', async (req) => {
   const b = await readBody(req);
   delete b.token;
   delete b.port;
+  const browserChanged = b.browser && typeof b.browser === 'object' && 'choice' in b.browser;
+  if (browserChanged) {
+    const id = String(b.browser.choice || '');
+    if (id && !browsers.detect().some((x) => x.id === id && x.chromium && x.path)) throw new HttpError(400, 'This browser is not installed or cannot be used by Huntboard.');
+    b.browser = { choice: id };
+  }
   profileLib.saveSettings(b);
+  // The AI tools read the browser from their MCP files: write them again with the new one.
+  if (browserChanged) spawnSync(process.execPath, [path.join(paths.ROOT, 'tools', 'sync-agents.js'), '--quiet'], { cwd: paths.ROOT, timeout: 30000 });
   return publicSettings();
+});
+route('GET', '/api/browsers', () => {
+  const cur = browsers.current();
+  return {
+    browsers: browsers.detect().map(({ id, name, chromium, path: p }) => ({ id, name, usable: chromium, installed: Boolean(p) })),
+    chosen: profileLib.loadSettings().browser.choice || '',
+    current: cur ? { id: cur.id, name: cur.name } : null,
+  };
 });
 
 route('GET', '/api/documents', () => documents.list());
