@@ -27,7 +27,11 @@ const tar = require('../lib/tar');
 const update = require('../lib/update');
 const migrate = require('../lib/migrate');
 
-const hunt = (...args) => spawnSync(process.execPath, [path.join(ROOT, 'tools', 'hunt.js'), ...args], { encoding: 'utf8', env: { ...process.env, HUNTBOARD_WORKSPACE: ws } });
+// hunt(...args, { env }) : the last argument may be options (extra environment, e.g. an app run's HUNTBOARD_RUN_ID).
+const hunt = (...args) => {
+  const o = args.length && typeof args[args.length - 1] === 'object' ? args.pop() : {};
+  return spawnSync(process.execPath, [path.join(ROOT, 'tools', 'hunt.js'), ...args], { encoding: 'utf8', env: { ...process.env, HUNTBOARD_WORKSPACE: ws, ...(o.env || {}) } });
+};
 
 const solid = (w, h, rgb) => {
   const px = new Uint8Array(w * h * 3);
@@ -171,10 +175,36 @@ test('a job the AI adds keeps the link to its ad, and one without a link is refu
   const r = hunt('add', f);
   assert.strictEqual(r.status, 1);
   assert.match(r.stdout, /Added 1 ticket/);
-  assert.match(r.stdout, /NOT added, no link to the ad: "Koch"/);
+  assert.match(r.stdout, /NOT added, no usable link to the ad: "Koch"/);
+  assert.match(r.stdout, /JOB-\d+ {2}Barkeeper @ Bar Drei {2}https:\/\/example\.com\/ads\/a1/, 'the output gives the ad link of each new ticket');
   const t = store.listTickets().find((x) => x.title === 'Barkeeper');
   assert.strictEqual(t.link, 'https://example.com/ads/a1');
   assert.ok(!store.listTickets().some((x) => x.title === 'Koch'));
+});
+
+test('ad links: the pool URL wins, fake or home-page links are refused, an AI run cannot pass as the user', () => {
+  const { adUrl } = require('../lib/dedupe');
+  assert.strictEqual(adUrl('/rc/clk?jk=12ab', 'https://it.indeed.com'), 'https://it.indeed.com/rc/clk?jk=12ab');
+  assert.strictEqual(adUrl('www.reed.co.uk/jobs/cook/123'), 'https://reed.co.uk/jobs/cook/123');
+  for (const bad of ['#', 'n/a', 'javascript:void(0)', 'https://www.stepstone.de/', '/rc/clk?jk=1']) assert.strictEqual(adUrl(bad), '', bad);
+
+  const [item] = postings.upsert([{ source: 'Test', native_id: 'c3', title: 'Sous-chef', company: 'Hotel Sieben', url: 'https://example.com/ads/c3' }]);
+  const f = path.join(ws, 'jobs2.json');
+  fs.writeFileSync(f, JSON.stringify([
+    { pool_key: item.key, link: 'https://example.com/search?q=chef', title: 'Sous-chef', company: 'Hotel Sieben' },
+    { title: 'Kellnerin', company: 'Cafe Acht', link: 'https://www.example.org/' },
+    { title: 'Barista', company: 'Cafe Neun', link: '/jobs/barista-9', source: 'Indeed' },
+  ]));
+  const r = hunt('add', f, '--by', 'user', { env: { HUNTBOARD_RUN_ID: 'run-test' } });
+  assert.strictEqual(r.status, 1);
+  assert.match(r.stdout, /NOT added, no usable link to the ad: "Kellnerin"/);
+  const tickets = store.listTickets();
+  assert.strictEqual(tickets.find((x) => x.title === 'Sous-chef').link, 'https://example.com/ads/c3');
+  assert.strictEqual(tickets.find((x) => x.title === 'Barista').link, 'https://indeed.com/jobs/barista-9');
+  const key = tickets.find((x) => x.title === 'Barista').key;
+  const s = hunt('set', key, 'link=', { env: { HUNTBOARD_RUN_ID: 'run-test' } });
+  assert.notStrictEqual(s.status, 0);
+  assert.strictEqual(store.getTicket(key).link, 'https://indeed.com/jobs/barista-9');
 });
 
 test('migrations run once: lost links come back', () => {

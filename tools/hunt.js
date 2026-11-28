@@ -63,7 +63,10 @@ Job search
   discover add <url...> | --file f [--target t1] [--dry-run]   company boards found by a web search
                                          (Greenhouse, Lever, Ashby, ...): checked, then added to the plan
   ingest <file.json> --target t1 --source <board>   add jobs you found with the browser
-  candidates [--target t1] [--json] | candidates show <key> | candidates skip <key...> --reason ".."
+  candidates [--target t1] [--brief] [--json] | candidates show <key> | candidates skip <key...> --reason ".." | candidates restore <key...>
+                                         --brief: the short view to score from (best first, few tokens)
+  score <scores.json> [--model ..]       the AI's fit scores [{key, score, verdict, reasons, red_flags}]: adds the jobs
+                                         at 35% or more (Huntboard fills in title, company, ad link, text), skips the rest
 
 Other
   decide "decision and reason" [--ticket KEY]   record a decision taken for the user (fully automatic mode)
@@ -81,7 +84,7 @@ function fail(msg, code = 2) {
 }
 
 // Boolean flags that never take a value.
-const FLAGS = new Set(['json', 'posting', 'only-empty', 'hook', 'xlsx', 'all', 'done', 'check', 'yes']);
+const FLAGS = new Set(['json', 'posting', 'only-empty', 'hook', 'xlsx', 'all', 'done', 'check', 'yes', 'brief']);
 
 // The fact check before a document is made: a CV or letter with invented facts is not rendered.
 function factGate(generated, ticket, what) {
@@ -134,6 +137,14 @@ function assignments(list) {
     out.push([m[1], value(m[2])]);
   }
   return out;
+}
+
+// The address of a board (by id or name), to resolve a relative ad link copied from one of its cards.
+function boardBase(source) {
+  const s = String(source || '').trim().toLowerCase();
+  if (!s) return '';
+  const b = require('../lib/boards').load().find((x) => x.id.toLowerCase() === s || String(x.name || '').toLowerCase() === s);
+  return (b && b.url) || '';
 }
 
 function setPath(obj, dotted, v) {
@@ -288,6 +299,54 @@ async function cmdAsk(pos, opt) {
   }
   console.log('NO ANSWER: the user did not answer in time. Stop and summarise what is left to do.');
   process.exit(4);
+}
+
+// Create tickets from jobs (hunt add, hunt score). Every job the AI adds needs the real link to its ad.
+function addJobs(data, opt) {
+  // data: what the JSON file held (an array of jobs, or { jobs: [...] }).
+  if (data && Array.isArray(data.jobs)) data = data.jobs;
+  if (!Array.isArray(data)) data = [data];
+  // Jobs from a search: take missing fields and the full ad text from the postings pool.
+  const postings = require('../lib/postings');
+  const prof = profileLib.loadProfile();
+  data = data.map((j) => {
+    if (!j || !j.pool_key) return j;
+    const item = postings.get(j.pool_key) || {};
+    // The pool keeps the URL the board gave: it wins over a link typed by the AI (which may be a search page or made up).
+    const merged = { ...item, ...j, link: item.url || j.link || '', posting: j.posting || postings.readBody(j.pool_key) };
+    if (!merged.target && item.targets && item.targets.length) merged.target = item.targets[0];
+    // Fully automatic: good enough jobs go straight to "To apply".
+    if (prof.applying.mode === 'full_auto' && j.fit && Number(j.fit.score) >= prof.applying.min_fit && !j.status) merged.status = 'to_apply';
+    return merged;
+  });
+  // A job the AI found must keep the real link to its ad: without it the user cannot check or apply.
+  // Inside an app run it is always the AI, whatever --by says.
+  const byUser = opt.by === 'user' && !process.env.HUNTBOARD_RUN_ID;
+  const noLink = [];
+  if (!byUser) {
+    data = data.filter((j) => {
+      if (!j || !j.title) return true;
+      const link = require('../lib/dedupe').adUrl(j.link || j.url, boardBase(j.source));
+      if (!link) noLink.push(j);
+      else j.link = link;
+      return Boolean(link);
+    });
+  }
+  const res = store.addTickets(data, { by: byUser ? 'user' : 'agent', status: opt.status === 'to_apply' ? 'to_apply' : 'found' });
+  for (const t of res.added) {
+    const src = data.find((j) => j && j.pool_key && (j.title === t.title));
+    if (src) postings.update(src.pool_key, { status: 'ticket', ticket: t.key });
+  }
+  for (const d of res.duplicates) if (d.job && d.job.pool_key) postings.update(d.job.pool_key, { status: 'ticket', ticket: d.key });
+  console.log(`Added ${res.added.length} ticket(s)${res.added.length ? ':' : '.'}`);
+  for (const t of res.added) console.log(`  ${t.key}  ${t.title} @ ${t.company || '?'}  ${t.link || '(no link)'}`);
+  if (res.duplicates.length) console.log(`Skipped ${res.duplicates.length} duplicate(s):\n  - ${res.duplicates.map((d) => `"${d.job.title}" at ${d.job.company || '?'} (already ${d.key})`).join('\n  - ')}`);
+  if (res.invalid.length) console.log(`Skipped ${res.invalid.length} entr${res.invalid.length > 1 ? 'ies' : 'y'} without a title.`);
+  if (noLink.length) {
+    console.log(`NOT added, no usable link to the ad: ${noLink.map((j) => `"${j.title}" at ${j.company || '?'}${j.link || j.url ? ` (got "${String(j.link || j.url).slice(0, 80)}")` : ''}`).join('; ')}.
+Add "link": the full URL of the ad itself (https://…, not the board's home or search page), or the "pool_key" from candidates, then run add again with only these jobs.`);
+    process.exitCode = 1;
+  }
 }
 
 async function main() {
@@ -482,40 +541,45 @@ async function main() {
       return;
     }
 
-    case 'add': {
+    case 'add':
+      return addJobs(readJsonFile(pos[0]), opt);
+
+    // The AI's fit scores for search candidates: Huntboard builds the tickets itself (title, company, ad link, ad
+    // text, details), so the AI writes only the score. Below 35 the candidate is skipped.
+    case 'score': {
+      const postings = require('../lib/postings');
+      const { summaryOf, requirementsOf } = require('../lib/prescore');
       let data = readJsonFile(pos[0]);
       if (data && Array.isArray(data.jobs)) data = data.jobs;
       if (!Array.isArray(data)) data = [data];
-      // Jobs from a search: take missing fields and the full ad text from the postings pool.
-      const postings = require('../lib/postings');
-      const prof = profileLib.loadProfile();
-      data = data.map((j) => {
-        if (!j || !j.pool_key) return j;
-        const item = postings.get(j.pool_key) || {};
-        const merged = { ...item, ...j, link: j.link || item.url || '', posting: j.posting || postings.readBody(j.pool_key) };
-        if (!merged.target && item.targets && item.targets.length) merged.target = item.targets[0];
-        // Fully automatic: good enough jobs go straight to "To apply".
-        if (prof.applying.mode === 'full_auto' && j.fit && Number(j.fit.score) >= prof.applying.min_fit && !j.status) merged.status = 'to_apply';
-        return merged;
-      });
-      // A job the AI found must keep the link to its ad: without it the user cannot check or apply.
-      const noLink = opt.by === 'user' ? [] : data.filter((j) => j && j.title && !require('../lib/dedupe').cleanUrl(j.link || j.url));
-      data = data.filter((j) => !noLink.includes(j));
-      const res = store.addTickets(data, { by: opt.by === 'user' ? 'user' : 'agent', status: opt.status === 'to_apply' ? 'to_apply' : 'found' });
-      for (const t of res.added) {
-        const src = data.find((j) => j && j.pool_key && (j.title === t.title));
-        if (src) postings.update(src.pool_key, { status: 'ticket', ticket: t.key });
+      const jobs = [];
+      const low = [];
+      const unknown = [];
+      for (const s of data) {
+        const key = s && (s.key || s.pool_key);
+        const item = key && postings.get(key);
+        if (!item) {
+          unknown.push(key || JSON.stringify(s).slice(0, 40));
+          continue;
+        }
+        const score = Math.max(0, Math.min(100, Math.round(Number(s.score) || 0)));
+        if (score < 35) {
+          low.push(key);
+          postings.update(key, { status: 'skipped', reason: String(s.verdict || `fit ${score}%`).slice(0, 300) });
+          continue;
+        }
+        const body = postings.readBody(key);
+        jobs.push({
+          pool_key: key, title: item.title, company: item.company, location: item.location, source: item.source,
+          posted: item.posted, salary: item.salary, job_type: item.job_type, target: opt.target || (item.targets || [])[0],
+          summary: s.summary || summaryOf(body), requirements: s.requirements || requirementsOf(body, 1500).split(' · ').join('; '),
+          fit: { score, verdict: String(s.verdict || ''), reasons: s.reasons || [], red_flags: s.red_flags || [], scored_with: String(s.scored_with || opt.model || '') },
+        });
       }
-      for (const d of res.duplicates) if (d.job && d.job.pool_key) postings.update(d.job.pool_key, { status: 'ticket', ticket: d.key });
-      console.log(`Added ${res.added.length} ticket(s)${res.added.length ? `: ${res.added.map((t) => t.key).join(', ')}` : ''}.`);
-      if (res.duplicates.length) console.log(`Skipped ${res.duplicates.length} duplicate(s):\n  - ${res.duplicates.map((d) => `"${d.job.title}" at ${d.job.company || '?'} (already ${d.key})`).join('\n  - ')}`);
-      if (res.invalid.length) console.log(`Skipped ${res.invalid.length} entr${res.invalid.length > 1 ? 'ies' : 'y'} without a title.`);
-      if (noLink.length) {
-        console.log(`NOT added, no link to the ad: ${noLink.map((j) => `"${j.title}" at ${j.company || '?'}`).join('; ')}.
-Add "link": the full URL of the ad as the board shows it (or the "pool_key" from candidates), then run add again with only these jobs.`);
-        process.exitCode = 1;
-      }
-      return;
+      if (low.length) console.log(`Skipped ${low.length} below 35%.`);
+      if (unknown.length) console.log(`Not found in the candidates (use the "key" that hunt candidates printed): ${unknown.join(', ')}`);
+      if (!jobs.length) return console.log('Added 0 ticket(s).');
+      return addJobs(jobs, opt);
     }
 
     case 'instruct': {
@@ -579,7 +643,15 @@ Add "link": the full URL of the ad as the board shows it (or the "pool_key" from
     case 'set': {
       const key = pos[0];
       const patch = Object.fromEntries(assignments(pos.slice(1)));
-      store.setFields(key, patch, { by: opt.by === 'user' ? 'user' : 'agent' });
+      const byUser = opt.by === 'user' && !process.env.HUNTBOARD_RUN_ID;
+      // The AI may correct the link to the ad, never remove it or put something that is not an ad's URL.
+      if ('link' in patch && !byUser) {
+        const t0 = store.mustGet(key);
+        const link = require('../lib/dedupe').adUrl(patch.link, boardBase(t0.source));
+        if (!link) fail(`"${patch.link}" is not the link to a job ad (https://…). The link of ${t0.key} was not changed.`);
+        patch.link = link;
+      }
+      store.setFields(key, patch, { by: byUser ? 'user' : 'agent' });
       console.log(`${store.mustGet(key).key} updated.`);
       return;
     }
@@ -751,6 +823,9 @@ ${body.trim()}
         console.log(`${id}: country ${p.country} | max age ${p.max_age_days} days | updated ${p.updated_at.slice(0, 10)}`);
         console.log(`  boards: ${p.boards.map((b) => `${b.id}${b.enabled ? '' : ' (off)'}`).join(', ')}`);
         console.log(`  search words: ${p.queries.join('; ')}`);
+        const tg = profileLib.loadProfile().targets.find((t) => t.id === id);
+        const extra = planLib.queriesFor(tg, p).filter((q) => !p.queries.includes(q));
+        if (extra.length) console.log(`  also searched (other names for the same job): ${extra.join('; ')}`);
         if ((p.places || []).length) console.log(`  places: ${p.places.map((x) => `${x.name}${x.kind === 'region' ? ` (region${x.aliases.length ? `, also ${x.aliases.join('/')}` : ''}${(x.centers || []).length ? `; around ${x.centers.join(', ')}` : ''})` : ''}`).join('; ')}`);
         if (p.towns.length) console.log(`  towns: ${p.towns.join(', ')}`);
         const miss = require('../lib/places').missingFromPlan(profileLib.loadProfile(), profileLib.loadProfile().targets.find((t) => t.id === id), p);
@@ -775,8 +850,9 @@ ${body.trim()}
         const p = profileLib.loadProfile();
         const target = p.targets.find((t) => t.id === (opt.target || '')) || p.targets.find((t) => t.active) || p.targets[0];
         if (!target) fail('No search target yet. Add one in Settings.');
-        const d = discover.due(target.id);
-        return console.log(`${d.due ? 'due' : 'not due'}: ${d.why}`);
+        const lim = require('../lib/economy').limits();
+        const d = discover.due(target.id, undefined, lim.discover_every_days);
+        return console.log(d.due ? `due: ${d.why}. Make at most ${lim.discover_searches} web searches.` : `not due: ${d.why}`);
       }
       const items = [...pos.slice(1).map((u) => ({ url: u, title: '' })), ...(typeof opt.file === 'string' ? discover.readUrls(fs.readFileSync(opt.file, 'utf8')) : [])];
       if (!items.length) fail('Give board URLs, or --file with a JSON list of URLs / {url, title}.');
@@ -803,9 +879,22 @@ ${body.trim()}
       let data = readJsonFile(pos[0]);
       if (data && Array.isArray(data.jobs)) data = data.jobs;
       const boardName = (require('../lib/boards').get(opt.source) || { name: opt.source }).name;
-      const rows = (Array.isArray(data) ? data : []).filter((r) => r && r.title).map((r) => ({ ...r, source: r.source || boardName, native_id: r.native_id || r.id || require('../lib/dedupe').linkKey(r.url) || '' }));
+      const { adUrl, linkKey } = require('../lib/dedupe');
+      const base = boardBase(opt.source);
+      const noUrl = [];
+      const rows = [];
+      for (const r of Array.isArray(data) ? data : []) {
+        if (!r || !r.title) continue;
+        const url = adUrl(r.url || r.link, base);
+        if (!url) {
+          noUrl.push(r);
+          continue;
+        }
+        rows.push({ ...r, url, source: r.source || boardName, native_id: r.native_id || r.id || linkKey(url) || '' });
+      }
       const res = await search.screen(rows, { profile: p, target, plan, run: `ingest-${opt.source}`, maxReads: 40, log: (m) => console.error(m) });
-      console.log(`${opt.source}: ${rows.length} jobs, ${res.already_known} seen before.\n${require('../lib/funnel').describe(res.stages)}\nCandidates now waiting: node tools/hunt.js candidates --target ${opt.target}`);
+      console.log(`${opt.source}: ${rows.length} jobs, ${res.already_known} seen before.\n${require('../lib/funnel').describe(res.stages)}\nCandidates now waiting: node tools/hunt.js candidates --target ${opt.target} --brief`);
+      if (noUrl.length) console.log(`Left out ${noUrl.length} job(s) without the link to the ad (copy the card's link, https://…): ${noUrl.slice(0, 10).map((r) => `"${r.title}"`).join(', ')}`);
       return;
     }
 
@@ -823,7 +912,32 @@ ${body.trim()}
         postings.setMany(keys, { status: 'skipped', reason: String(opt.reason || 'not a good fit').slice(0, 300) });
         return console.log(`Skipped ${keys.length}.`);
       }
-      const list = postings.list({ status: 'candidate', target: opt.target }).slice(0, Number(opt.limit) || 40);
+      if (sub === 'restore') {
+        const keys = pos.slice(1);
+        postings.setMany(keys, { status: 'candidate', reason: '' });
+        return console.log(`${keys.length} back in the candidates.`);
+      }
+      // Best first: the quick fit check in code (lib/prescore.js) sorted them.
+      const all = postings.list({ status: 'candidate', target: opt.target }).sort((a, b) => (b.prescore || 0) - (a.prescore || 0));
+      if (opt.brief) {
+        // The short view (few tokens): facts, the quick check, and only what the employer asks for.
+        const lim = require('../lib/economy').limits();
+        const list = all.slice(0, Number(opt.limit) || lim.candidates);
+        if (!list.length) return console.log('No candidates waiting. Run a search first.');
+        const { requirementsOf } = require('../lib/prescore');
+        for (const i of list) {
+          console.log(`\n### ${i.key}  (quick check ${i.prescore == null ? '?' : i.prescore})`);
+          console.log(`${i.title} | ${i.company || '?'} | ${i.location || '?'} | posted ${i.posted || '?'}${i.salary ? ` | ${i.salary}` : ''}${i.job_type ? ` | ${i.job_type}` : ''}`);
+          if ((i.matched || []).length || (i.missing || []).length) console.log(`matches the CV: ${(i.matched || []).join(', ') || '-'}${(i.missing || []).length ? ` · missing: ${i.missing.join(', ')}` : ''}`);
+          console.log(`asks for: ${requirementsOf(postings.readBody(i.key), Number(opt.chars) || 600)}`);
+        }
+        console.log(`\n${list.length} of ${all.length} candidate(s). Score each 0–100 from these lines and the user's profile (open one ad in full only if you must: hunt candidates show <key>).
+Write [{ "key": "...", "score": 78, "verdict": "Good – ...", "reasons": ["..."], "red_flags": ["..."] }] for ALL of them to a file, then run:
+  node tools/hunt.js score <file> --model "<your model name>"
+It adds the jobs at 35 or more (title, company, ad link and text come from Huntboard) and skips the rest.`);
+        return;
+      }
+      const list = all.slice(0, Number(opt.limit) || 40);
       if (opt.json) return console.log(JSON.stringify(list.map((i) => ({ ...i, text: postings.readBody(i.key).slice(0, Number(opt.chars) || 4000) })), null, 2));
       if (!list.length) return console.log('No candidates waiting. Run a search first.');
       for (const i of list) {

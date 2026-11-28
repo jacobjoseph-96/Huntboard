@@ -41,7 +41,7 @@ export async function render(main) {
       ${plans[t.id] ? html`<div class="small" style="margin-top:8px"><b>Job boards</b> <span class="hint">click to switch on/off</span>
           <div class="row" style="margin-top:4px;gap:6px">${plans[t.id].boards.map((b) => html`<button class="chip ${b.enabled ? 'on' : ''}" data-toggle="${t.id}|${b.id}|${b.enabled ? 'off' : 'on'}" title="${b.why || ''}">${boardName(b.id)}</button>`)}</div>
           <div class="row" style="margin-top:8px;gap:6px"><b>Jobs posted in the last</b> ${ageSelect(t.id, plans[t.id].max_age_days)}</div>
-          <div class="muted" style="margin-top:6px"><b>Search words:</b> ${plans[t.id].queries.join(' · ')}</div></div>`
+          <div class="muted" style="margin-top:6px"><b>Search words:</b> ${(plans[t.id].all_queries || plans[t.id].queries).join(' · ')}</div></div>`
         : html`<p class="small muted" style="margin-top:8px">No job boards chosen yet: press <b>Choose job boards</b> (the first search does it too).</p>`}
       <div class="row" style="margin-top:10px">
         <button class="btn primary" data-search="${t.id}" ${ready && canSearch && t.active ? '' : 'disabled'}>Find jobs</button>

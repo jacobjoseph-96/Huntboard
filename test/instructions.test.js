@@ -40,3 +40,15 @@ test('the run prompt carries the instructions of its ticket, and "apply" those o
   const none = prompts.build({ kind: 'skill', skill: 'search' }, profile);
   assert.doesNotMatch(none, /Instructions from the user/);
 });
+
+test('a "Tell the AI" task is the user\'s words only: no default skill, no cover letter unless asked', () => {
+  const [t] = store.addTickets([{ title: 'Embedded Engineer', company: 'Gamma', status: 'to_apply', link: 'https://example.com/ads/g1' }]).added;
+  const p = prompts.build({ kind: 'task', ticket: t.key, message: 'Find out who the hiring manager is.', args: { needs: 'Who should the letter go to?' } }, profileLib.loadProfile());
+  assert.match(p, /^# Task: do what the user asked for this job/);
+  assert.match(p, /> Find out who the hiring manager is\./);
+  assert.match(p, /Who should the letter go to\?/);
+  assert.match(p, /Do not write a CV, cover letter or e-mail, apply/);
+  assert.match(p, new RegExp(`Ticket: ${t.key}`));
+  assert.doesNotMatch(p, /Use the Huntboard skill "apply"/);
+  assert.match(p, /link to its ad/, 'every summary gives the ad link');
+});

@@ -166,7 +166,7 @@ async function clearTab() {
   }
   if (tab === 'ai') {
     const s = app.state.settings;
-    await api('PUT', '/api/settings', { ai: { model: '', models: { [s.ai.tool]: { light: '', standard: '', strong: '' } }, task_tiers: Object.fromEntries(Object.keys(app.meta.model_tiers.tasks).map((k) => [k, ''])), auto_prepare_interviews: false, full_access: { [s.ai.tool]: false } } }).catch((err) => toast(err.message, true));
+    await api('PUT', '/api/settings', { ai: { model: '', models: { [s.ai.tool]: { light: '', standard: '', strong: '' } }, task_tiers: Object.fromEntries(Object.keys(app.meta.model_tiers.tasks).map((k) => [k, ''])), auto_prepare_interviews: false, full_access: { [s.ai.tool]: false }, economy: 'auto' } }).catch((err) => toast(err.message, true));
     await refreshState();
   }
   await drawPane();
@@ -199,7 +199,9 @@ async function aiPane() {
           ${t.verified ? '' : html`<span class="badge info">experimental</span>`}
           ${t.runnable ? '' : html`<span class="hint">Install: <span class="mono">${t.install}</span></span>`}</span></span></label>`)}</div>
     <label class="check" style="margin-top:12px"><input type="checkbox" name="auto_prep" ${s.ai.auto_prepare_interviews ? 'checked' : ''}> Start interview preparation automatically when I move a job to "Interview"</label>
-    <label class="check" style="margin-top:8px"><input type="checkbox" name="full" ${fullAccessOn(s) ? 'checked' : ''}> Let the AI work without asking <span class="hint">(needed by some tools for browsing and forms; the AI can then run any command in this folder)</span></label>
+    <label class="field" style="margin-top:12px;max-width:560px">Save AI usage <span class="hint">for free or student plans: Huntboard does more of the search itself, the AI scores fewer jobs and opens fewer boards</span>
+      <select name="economy">${[['auto', 'Automatic (on for Gemini / Antigravity)'], ['on', 'On'], ['off', 'Off']].map(([v, l]) => html`<option value="${v}" ${(s.ai.economy || 'auto') === v ? 'selected' : ''}>${l}</option>`)}</select></label>
+    <label class="check" style="margin-top:8px"><input type="checkbox" name="full"${fullAccessOn(s) ? 'checked' : ''}> Let the AI work without asking <span class="hint">(needed by some tools for browsing and forms; the AI can then run any command in this folder)</span></label>
     <div class="row" style="margin-top:16px"><button class="btn" id="test-ai" type="button">Test the AI</button>
       <span class="hint">The first time, sign in once: open a terminal in the Huntboard folder and start the tool (e.g. <span class="mono">${(tool || tools[0] || {}).sign_in || ''}</span>).</span></div>
     <div id="test-out" style="margin-top:10px"></div>
@@ -242,7 +244,7 @@ function readAi(pane) {
     const v = ($(`[name=tier_${k}]`, pane) || {}).value;
     taskTiers[k] = v && v !== tiers.tasks[k] ? v : '';
   }
-  const ai = { tool, auto_prepare_interviews: $('[name=auto_prep]', pane).checked, full_access: full, task_tiers: taskTiers };
+  const ai = { tool, auto_prepare_interviews: $('[name=auto_prep]', pane).checked, full_access: full, task_tiers: taskTiers, economy: ($('[name=economy]', pane) || {}).value || 'auto' };
   // The models belong to the tool they were typed for: switching tool shows that tool's models.
   if (tool === app.state.settings.ai.tool) Object.assign(ai, { models: { [tool]: models }, model: models.standard });
   return ai;

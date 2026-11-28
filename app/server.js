@@ -271,6 +271,25 @@ route('PUT', '/api/tickets/:key/instructions', async (req, p) => {
   soon('tickets');
   return ticketView(t);
 });
+// "Tell the AI what to do" on a ticket, the one place for the user's orders on a job:
+//  run (default): the words become the AI's task for this job, now (nothing else runs);
+//  remember: they are saved as the job's instructions, which every later AI task on it follows; no task starts.
+route('POST', '/api/tickets/:key/tell', async (req, p) => {
+  const b = await readBody(req);
+  const text = String(b.text || '').trim();
+  if (!text) throw new HttpError(400, 'Write what the AI should do first.');
+  const t = store.mustGet(p.key);
+  const needs = b.answer_to_needs && t.needs ? t.needs.text : '';
+  const run = b.run !== false && !b.remember;
+  if (b.remember) store.setInstructions(t.key, text, { by: 'user' });
+  if (run) store.addNote(t.key, `You told the AI: ${text}`, { by: 'user' });
+  if (needs) store.setNeeds(t.key, null, { by: 'user' });
+  soon('tickets');
+  return {
+    ticket: ticketView(store.mustGet(t.key)),
+    run: run ? summary(runner.enqueue({ kind: 'task', ticket: t.key, message: text, args: needs ? { needs } : null })) : null,
+  };
+});
 // Show a ticket file in the file manager, selected.
 route('POST', '/api/reveal', async (req) => {
   const b = await readBody(req);
@@ -457,7 +476,12 @@ route('PUT', '/api/tickets/:key/needs', async (req, p) => {
   return ticketView(store.setNeeds(p.key, b.text ? b.text : null, { by: 'user' }));
 });
 
-route('GET', '/api/plan', () => require('../lib/plan').loadAll().targets);
+// Each plan with the search words a search really uses (the plan's words + other names for the same jobs).
+route('GET', '/api/plan', () => {
+  const planLib = require('../lib/plan');
+  const targets = profileLib.loadProfile().targets;
+  return Object.fromEntries(Object.entries(planLib.loadAll().targets).map(([id, p]) => [id, { ...p, all_queries: planLib.queriesFor(targets.find((t) => t.id === id), p) }]));
+});
 route('GET', '/api/boards', () => require('../lib/boards').load().map((b) => ({ id: b.id, name: b.name, url: b.url, kind: b.access.kind, verified: b.verified })));
 route('PUT', '/api/plan/:target/boards/:board', async (req, p) => require('../lib/plan').toggleBoard(p.target, p.board, (await readBody(req)).enabled));
 route('PUT', '/api/plan/:target/age', async (req, p) => {

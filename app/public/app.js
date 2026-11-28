@@ -383,7 +383,7 @@ function connect() {
       if (ev === 'run') {
         app.runs.set(data.id, { ...(app.runs.get(data.id) || {}), ...data });
         renderRunbar();
-        if (data.status === 'done' && data.kind === 'skill') refreshState().catch(() => {});
+        if (data.status === 'done' && (data.kind === 'skill' || data.kind === 'task')) refreshState().catch(() => {});
       }
       if (ev === 'asks') checkAsks();
       if (ev === 'profile' || ev === 'tickets') refreshState().catch(() => {});

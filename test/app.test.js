@@ -76,6 +76,30 @@ test('tickets through the API', async () => {
   assert.strictEqual(file.status, 404);
 });
 
+test('"Tell the AI what to do" needs words, then runs exactly that as a task for the job', async () => {
+  const created = await req('POST', '/api/tickets', { body: { title: 'Qt Developer', company: 'Bar Zwei', link: 'https://example.com/job/2' } });
+  const key = created.body.key;
+  require('../lib/store').setNeeds(key, 'The form keeps an old CV: may I replace it?');
+  const empty = await req('POST', `/api/tickets/${key}/tell`, { body: { text: '   ' } });
+  assert.strictEqual(empty.status, 400);
+  const sent = await req('POST', `/api/tickets/${key}/tell`, { body: { text: 'Yes, replace the old CV.', answer_to_needs: true } });
+  assert.strictEqual(sent.status, 200);
+  assert.strictEqual(sent.body.run.kind, 'task');
+  assert.strictEqual(sent.body.run.ticket, key);
+  assert.match(sent.body.run.title, /replace the old CV/);
+  let t = (await req('GET', `/api/tickets/${key}`)).body.ticket;
+  assert.strictEqual(t.needs, null, 'the answer clears the Needs-you item');
+  assert.ok(t.history.some((h) => h.type === 'comment' && /You told the AI: Yes, replace the old CV/.test(h.text)));
+  assert.ok(!t.instructions, 'sending does not make it a standing rule');
+
+  // "Just remember it": saved for every later task, no task starts.
+  const kept = await req('POST', `/api/tickets/${key}/tell`, { body: { text: 'Always write in German.', remember: true } });
+  assert.strictEqual(kept.status, 200);
+  assert.strictEqual(kept.body.run, null);
+  t = (await req('GET', `/api/tickets/${key}`)).body.ticket;
+  assert.strictEqual(t.instructions.text, 'Always write in German.');
+});
+
 test('hunt ask waits for the answer given in the app', async () => {
   const child = spawn(process.execPath, [path.join(ROOT, 'tools', 'hunt.js'), 'ask', 'Apply to these 3 jobs?', '--choices', 'Yes,No'], { env: process.env });
   let out = '';

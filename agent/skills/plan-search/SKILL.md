@@ -17,7 +17,13 @@ Follow `AGENTS.md`. Do one plan per active search target (or only the target nam
    kind of work (e.g. "best job sites for part-time jobs in Portugal"). Add each good one with
    `node tools/hunt.js boards add <file.json>` (fields: `id`, `name`, `url`, `countries`, `sectors`, `job_types`,
    `access: {"kind":"browser","playbook":"generic"}`, `priority`, `notes`), then use it in the plan.
-4. **Search words** (`queries`, 3–8), in the language of the job country first, then English if useful:
+4. **Search words** (`queries`, 4–12), in the language of the job country first, then English if useful. For every
+   title the user typed or the CV shows, add the other names employers use **for the same job** (not other jobs):
+   synonyms of the role word (developer / engineer / programmer, waiter / server, cook / chef), with and without
+   "software", and the local-language titles. E.g. "C++ developer" in Germany → "C++ Entwickler",
+   "Softwareentwickler C++", "C++ Developer", "C++ Software Engineer", "C++ Programmierer". No seniority words
+   ("Senior", "Lead") unless the user wrote them. Huntboard adds the common English variants itself
+   (`plan show` lists them as "also searched"), so spend the slots on the local words.
    - roles `cv` (jobs in my field): the job titles from `suggested_roles` and the CV, as employers write them in ads
      (e.g. "Softwareentwickler C++", "C++ Developer"; "Cameriere di sala", "Cameriere").
    - roles `any` (any job of this type): broad words for the job type in the local language, not tied to the
@@ -26,7 +32,8 @@ Follow `AGENTS.md`. Do one plan per active search target (or only the target nam
      Add the 3–5 most common entry-level jobs nearby (shops, bars, hotels, warehouses, cleaning, delivery…),
      but leave out what the user wants to avoid.
    - roles `custom`: the user's titles, translated and with common variants.
-   Also fill `title_keywords`: single words a matching job title contains (used to filter results), and
+   Also fill `title_keywords`: single words a matching job title contains (used to filter results; include every role
+   word of the search words, e.g. "developer", "engineer", "entwickler", "c++"), and
    `exclude_keywords`: words that mean the job is wrong (e.g. "senior", "Ausbildung" if not wanted). For `any`
    targets leave `title_keywords` empty.
 5. **Places and towns.** The places to search are the target's own places, else the profile's "Search in" places

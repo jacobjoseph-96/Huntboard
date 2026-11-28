@@ -24,9 +24,10 @@ as "Sachsen" leave out `&radius`)
 ```
 
 **Read one ad:** `https://<site>/viewjob?jk=<jk>`; the text is in `#jobDescriptionText`, salary and job type in
-`#salaryInfoAndJobType`:
+`#salaryInfoAndJobType`. Indeed blocks plain requests, so here you copy the ad text yourself, but only for the cards
+whose title fits the search words (at most 10 per search when the report says it saves AI usage):
 ```js
-() => ({ body: document.querySelector('#jobDescriptionText')?.innerText.trim(),
+() => ({ body: document.querySelector('#jobDescriptionText')?.innerText.trim().slice(0, 3500),
          salary: document.querySelector('#salaryInfoAndJobType')?.innerText.trim() })
 ```
 

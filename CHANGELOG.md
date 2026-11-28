@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+
+- **Searches find the other names of a job.** A search for "C++ developer" also looks for "C++ software engineer",
+  "C++ programmer", "C++ Entwickler"… (`lib/roles.js`; `hunt plan show` lists them as "also searched", the Search
+  page shows all search words). "C++", "C#" and ".NET" no longer vanish in the title filter. LinkedIn is now searched
+  in every place of the plan, not only the first one.
+- **One "Tell the AI what to do" button** on a ticket replaces "Add instructions". It opens a box for your own
+  words: "Send to the AI" has exactly that done now and nothing else; "Just remember it" saves it as a rule every
+  later AI task on this job follows (shown on the ticket, with Remove). Nothing starts until you wrote something;
+  the Needs-you banner uses the same box. A task button pressed just as the page redraws is ignored, so
+  a shifting page cannot start a cover letter by mistake.
+- **Every job keeps the real link to its ad, with every AI tool.** `hunt add` takes the link from the search pool,
+  resolves links copied from a card (`/rc/clk?jk=…`), refuses `#`, home pages and non-URLs, and an AI run cannot
+  skip the check with `--by user`; `hunt set … link=` cannot remove a link. The AI gives the ticket key and ad link
+  of every job it names.
+- **Search on a free or student plan (Antigravity, Gemini).** Huntboard does the work, the AI only scores:
+  - StepStone, Reed, karriere.at, jobs.ch and HelloWork are read by Huntboard itself (`html` collector) instead of
+    by the AI's browser;
+  - a quick fit check in code (`lib/prescore.js`) sorts the candidates and drops the ones where nothing matches the
+    CV or a language the user does not speak is required;
+  - `hunt candidates --brief` shows each job in a few lines (what the employer asks for, what matches the CV), and
+    `hunt score` takes only the scores: Huntboard builds the tickets with title, company, ad link and text;
+  - Settings → AI tool → "Save AI usage" (automatic for Gemini / Antigravity) caps the jobs scored per run, the
+    browser boards, pages and search words, runs the company-board web search weekly, and uses the light model.
+
 ## 0.2.1
 
 - **The AI usage limit no longer loses work.** When the AI tool says its usage limit is reached, the task waits for

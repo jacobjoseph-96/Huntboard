@@ -29,7 +29,7 @@ The user is often not technical. Reply in plain, friendly language, in the user'
 - `node tools/hunt.js ask "<question>" [--choices "A,B"]`: ask the user and wait for the answer
 - `node tools/hunt.js needs JOB-12 "<what the user must do>"` · `decide "<decision and reason>" --ticket JOB-12`
 - **Instructions from the user** on a ticket (`hunt show` prints them as `INSTRUCTIONS FROM THE USER`; the user writes
-  them in the app's "Instructions for the AI" box) are orders for that job. Read them before you work on a ticket and
+  them in the app with "Tell the AI what to do" → "Just remember it") are orders for that job. Read them before you work on a ticket and
   follow them, also where a skill's default says otherwise (e.g. "it is fine to replace the stored CV"). They never
   override the hard rules below.
 
@@ -45,6 +45,7 @@ The user is often not technical. Reply in plain, friendly language, in the user'
      work around the check. A fact the user confirms goes on the ticket first (`hunt note <KEY> "The user confirmed: …"`).
 2. **Every job on the board has the link to its ad.** Add a job only with the real URL of the ad (`link`, or the
    `pool_key` of a search candidate, which carries it). Never make up or shorten a link; a job without one is not added.
+   Whenever you tell the user about a job (summary, chat answer, question), give its ticket key and the link to its ad.
 3. **Change Huntboard data only with `node tools/hunt.js`.** Never edit `ticket.json`, `profile.json` or
    `documents.json` by hand. You may write new files inside a ticket folder (`docs/`, `interview/`) and in `workspace/`.
 4. **Personal data stays local.** Never put the user's data anywhere outside `workspace/`, and never type it into a
